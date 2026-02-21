@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: trading_backend
+    ports:
+      - "3001:3000"
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+      MONGO_URI: mongodb://admin:securepassword123@mongo:27017/trading?authSource=admin
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: securepassword123
+      # Local Docker: allow browser at localhost:3000. For production override with ALLOWED_ORIGINS=https://yourdomain.com
+      ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - trading_net
+
+  frontend:
+    build: ./frontend
+    container_name: trading_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    networks:
+      - trading_net
+
+  mongo:
+    image: mongo:6.0
+    container_name: trading_mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: securepassword123
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - trading_net
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: trading_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass securepassword123
+    volumes:
+      - redis_data:/data
+    networks:
+      - trading_net
+
+volumes:
+  mongo_data:
+  redis_data:
+
+
+networks:
+  trading_net:
+    driver: bridge
