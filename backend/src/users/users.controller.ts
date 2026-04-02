@@ -54,8 +54,8 @@ export class UsersController {
 
     // Security: Generate unique secret for THIS user only
     const secret = speakeasy.generateSecret({
-      name: `bitXtrade:${user.email}`, // User-specific label
-      issuer: 'bitXtrade',
+      name: `Investlyin:${user.email}`, // User-specific label
+      issuer: 'Investlyin',
       length: 32, // Increased length for better security
     });
 
@@ -67,7 +67,7 @@ export class UsersController {
     const otpauthUrl = speakeasy.otpauthURL({
       secret: secret.ascii || secret.base32,
       label: user.email,
-      issuer: 'TradingPlatform',
+      issuer: 'Investlyin',
       encoding: 'ascii',
     });
 

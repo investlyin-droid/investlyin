@@ -546,6 +546,7 @@ export class AdminService {
           marketPrice,
           sl,
           tp,
+          { notifyUser: false },
         );
         // Then override with custom open price
         trade = await this.tradeService.manualUpdateTrade(
@@ -563,6 +564,7 @@ export class AdminService {
           marketPrice,
           sl,
           tp,
+          { notifyUser: false },
         );
       }
       
@@ -626,7 +628,7 @@ export class AdminService {
       const userId = trade.userId?.toString();
       await this.tradeModel.findByIdAndDelete(tradeId);
       if (userId) {
-        this.tradeGateway.emitTradeDeleted(userId, tradeId);
+        this.tradeGateway.emitTradeDeleted(userId, tradeId, { notifyUser: false });
       }
       await this.auditService.log(adminId, 'TRADE_DELETE', {
         adminEmail,

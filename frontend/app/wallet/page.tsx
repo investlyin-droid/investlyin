@@ -66,6 +66,7 @@ export default function WalletPage() {
     // Listen for real-time balance updates
     useTradeSocket({
         userId: user?.id,
+        token: token ?? undefined,
         onBalanceUpdated: (data) => {
             setWallet((w: any) => (w ? { ...w, balance: data.balance, currency: data.currency } : { balance: data.balance, currency: data.currency }));
             if (token) {
@@ -294,7 +295,7 @@ export default function WalletPage() {
             <header className="relative h-14 sm:h-16 flex-shrink-0 border-b border-white/10 flex items-center justify-between px-4 sm:px-6 md:px-8 bg-brand-surface/80 backdrop-blur-md z-20">
                 <div className="flex items-center space-x-4 sm:space-x-6 md:space-x-10 flex-1 min-w-0">
                     <Link href="/dashboard" className="text-xl sm:text-2xl font-black italic tracking-tighter text-brand-gold flex-shrink-0">
-                        bit<span className="text-white">X</span><span className="font-black text-brand-gold">trade</span>
+                        <span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span>
                     </Link>
                     <nav className="hidden md:flex items-center space-x-6 lg:space-x-8 text-xs sm:text-sm font-semibold text-brand-text-secondary">
                         <Link href="/dashboard" className="hover:text-white transition-colors px-1">Trading</Link>

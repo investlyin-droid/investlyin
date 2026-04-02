@@ -4,6 +4,15 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production' && (A
   console.warn('[Production] NEXT_PUBLIC_API_URL should point to your production API, not localhost. Set it at build time.');
 }
 
+/** Browser-specific: Chrome says "Failed to fetch", Firefox often "NetworkError when attempting to fetch resource". */
+function isLikelyFetchNetworkFailure(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { name?: string; message?: string };
+  if (e.name === 'TypeError') return true;
+  const m = String(e.message || '');
+  return /failed to fetch|networkerror|load failed|network request failed/i.test(m);
+}
+
 interface ApiError {
     message: string;
     status?: number;
@@ -67,11 +76,24 @@ class ApiClient {
                 });
             } catch (fetchError: any) {
                 clearTimeout(timeoutId);
-                // Network error (connection refused, CORS, etc.)
-                if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
-                    throw new Error(`Cannot connect to backend at ${API_URL}. Please ensure the backend is running.`);
+                if (fetchError?.name === 'AbortError') {
+                    throw new Error(
+                        `Request to ${API_URL} timed out (30s). Is the backend running and reachable?`,
+                    );
                 }
-                throw new Error(`Network error: ${fetchError.message || 'Failed to connect to server'}`);
+                if (isLikelyFetchNetworkFailure(fetchError)) {
+                    const localHint =
+                        process.env.NODE_ENV === 'development' &&
+                        (API_URL.includes('localhost') || API_URL.includes('127.0.0.1'))
+                            ? ' From the repo: cd backend && npm run start:dev (listens on http://localhost:3001 by default). If the API uses another port, set NEXT_PUBLIC_API_URL in frontend/.env.local.'
+                            : '';
+                    throw new Error(
+                        `Cannot connect to backend at ${API_URL}. Start the NestJS API or fix NEXT_PUBLIC_API_URL.${localHint}`,
+                    );
+                }
+                throw new Error(
+                    `Network error: ${fetchError?.message || 'Failed to connect to server'}`,
+                );
             }
 
             clearTimeout(timeoutId);
@@ -95,8 +117,10 @@ class ApiClient {
                         }
                     }
                 } catch (parseError) {
-                    // If response is not JSON or text, use statusText
-                    console.warn('Failed to parse error response:', parseError);
+                    // If response is not JSON or text, use statusText (no console in production)
+                    if (process.env.NODE_ENV === 'development') {
+                        console.warn('Failed to parse error response:', parseError);
+                    }
                 }
 
                 // Provide more specific error messages for common status codes

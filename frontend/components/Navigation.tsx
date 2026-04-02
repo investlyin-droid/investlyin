@@ -113,7 +113,7 @@ export default function Navigation() {
       <div className="content-container h-full flex items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center space-x-4 sm:space-x-8 lg:space-x-12 flex-1">
           <Link href="/" className="text-xl sm:text-2xl font-black italic tracking-tighter text-brand-gold flex-shrink-0">
-            bit<span className="text-white">X</span><span className="font-black text-brand-gold">trade</span>
+            <span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span>
           </Link>
           
           {/* Desktop Navigation */}

@@ -14,8 +14,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "bitXtrade - Professional CFD Trading Platform",
-  description: "bitXtrade - Leading global CFD trading platform with institutional-grade execution, real-time market data, and advanced trading tools.",
+  title: "Investlyin - Professional CFD Trading Platform",
+  description: "Investlyin - Leading global CFD trading platform with institutional-grade execution, real-time market data, and advanced trading tools.",
 };
 
 export const viewport: Viewport = {

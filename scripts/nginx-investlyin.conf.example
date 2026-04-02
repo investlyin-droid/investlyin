@@ -1,0 +1,53 @@
+# Copy to /etc/nginx/sites-available/investlyin and symlink to sites-enabled.
+# After: nginx -t && systemctl reload nginx
+# SSL: certbot --nginx -d investlyin.com -d www.investlyin.com -d api.investlyin.com
+
+upstream investlyin_frontend {
+    server 127.0.0.1:3000;
+}
+
+upstream investlyin_api {
+    server 127.0.0.1:3001;
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name investlyin.com www.investlyin.com;
+
+    location / {
+        proxy_pass http://investlyin_frontend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name api.investlyin.com;
+
+    location / {
+        proxy_pass http://investlyin_api;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /socket.io/ {
+        proxy_pass http://investlyin_api;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+    }
+}

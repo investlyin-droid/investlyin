@@ -10,8 +10,6 @@ import {
   DepositIntentStatus,
 } from './schemas/deposit-intent.schema';
 import { WalletService } from './wallet.service';
-import { LedgerService } from '../ledger/ledger.service';
-import { TransactionType } from '../ledger/schemas/ledger.schema';
 import { TradeGateway } from '../trade/trade.gateway';
 import { PaymentConfig, PaymentConfigDocument } from '../admin/schemas/payment-config.schema';
 
@@ -28,7 +26,6 @@ export class DepositService {
     @InjectModel(PaymentConfig.name)
     private paymentConfigModel: Model<PaymentConfigDocument>,
     private walletService: WalletService,
-    private ledgerService: LedgerService,
     private configService: ConfigService,
     @Optional() @Inject(forwardRef(() => TradeGateway))
     private tradeGateway?: TradeGateway,
@@ -117,7 +114,7 @@ export class DepositService {
 
   private getBankDetails(): { name: string; iban: string; swift: string; referenceLabel: string } {
     return {
-      name: this.configService.get<string>('DEPOSIT_BANK_NAME') || 'bitXtrade Ltd',
+      name: this.configService.get<string>('DEPOSIT_BANK_NAME') || 'Investlyin Ltd',
       iban: this.configService.get<string>('DEPOSIT_BANK_IBAN') || 'GB00SIMU00000000000000',
       swift: this.configService.get<string>('DEPOSIT_BANK_SWIFT') || 'SIMUGB2L',
       referenceLabel: this.configService.get<string>('DEPOSIT_BANK_REF_LABEL') || 'Payment reference',
@@ -303,22 +300,13 @@ export class DepositService {
     const feeAmount = (intent.amount * depositFeePercent) / 100;
     const netAmount = intent.amount - feeAmount;
 
-    const wallet = await this.walletService.getWallet(userId);
-    const balanceBefore = wallet.balance;
-    wallet.balance += netAmount;
-    await wallet.save();
-
     const description = `Deposit via ${intent.method} (ref: ${intent.reference})${feeAmount > 0 ? `, fee $${feeAmount.toFixed(2)}` : ''}`;
-    await this.ledgerService.createEntry(
-      userId,
-      TransactionType.DEPOSIT,
-      netAmount,
-      balanceBefore,
-      wallet.balance,
-      intent._id.toString(),
-      description,
-      { method: intent.method, reference: intent.reference, grossAmount: intent.amount, fee: feeAmount },
-    );
+    const wallet = await this.walletService.deposit(userId, netAmount, description, {
+      method: intent.method,
+      reference: intent.reference,
+      grossAmount: intent.amount,
+      fee: feeAmount,
+    }, intent._id.toString());
 
     intent.status = DepositIntentStatus.COMPLETED;
     intent.completedAt = new Date();

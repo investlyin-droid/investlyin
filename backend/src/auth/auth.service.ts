@@ -13,6 +13,14 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
+  /** True if ADMIN_EMAIL / ADMIN_ALLOWED_EMAILS is set (used to gate auto-promotion and JWT adminAccessAllowed). */
+  private isAdminAllowlistConfigured(): boolean {
+    return !!(
+      this.configService.get<string>('ADMIN_ALLOWED_EMAILS')?.trim() ||
+      this.configService.get<string>('ADMIN_EMAIL')?.trim()
+    );
+  }
+
   /** True if admin allowlist is not set, or email is in ADMIN_ALLOWED_EMAILS / ADMIN_EMAIL */
   private isEmailAllowedForAdmin(email: string): boolean {
     const allowed =
@@ -21,6 +29,28 @@ export class AuthService {
     if (!allowed) return true;
     const list = allowed.split(',').map((e) => e.trim().toLowerCase());
     return list.includes((email || '').toLowerCase());
+  }
+
+  private static roleRank(role: string): number {
+    const r = (role || '').toLowerCase();
+    if (r === 'super_admin') return 2;
+    if (r === 'admin') return 1;
+    return 0;
+  }
+
+  /**
+   * Role for Firestore after Firebase sign-in: custom claims win; otherwise if ADMIN_EMAIL(s) is set
+   * and this email matches, grant admin so the admin portal works with the same Firebase password
+   * without setting Firebase custom claims.
+   */
+  private resolveEffectiveRole(tokenRole: string | undefined, email: string): string {
+    const tr = String(tokenRole || '').toLowerCase();
+    if (tr === 'super_admin') return 'super_admin';
+    if (tr === 'admin') return 'admin';
+    if (this.isAdminAllowlistConfigured() && email?.trim() && this.isEmailAllowedForAdmin(email)) {
+      return 'admin';
+    }
+    return 'user';
   }
 
   /**
@@ -121,7 +151,6 @@ export class AuthService {
   private async firebaseLoginInternal(firebaseToken: string, email?: string, displayName?: string) {
     const decodedToken = await this.firebaseService.verifyToken(firebaseToken);
     const firebaseUid = decodedToken.uid;
-    const role = (decodedToken.role as string) || 'user';
     const emailResolved = (email && email.trim()) || (decodedToken.email as string) || '';
     const displayNameResolved = (displayName && displayName.trim()) || '';
 
@@ -129,24 +158,29 @@ export class AuthService {
     if (!user) {
       const existingByEmail = emailResolved ? await this.usersService.findOneByEmail(emailResolved) : null;
       if (existingByEmail) {
-        // Same person, different sign-in method (e.g. Google vs Email/Password). Preserve role and profile.
+        const mergedRole = this.resolveEffectiveRole(decodedToken.role as string, existingByEmail.email);
+        const roleForLink =
+          AuthService.roleRank(mergedRole) > AuthService.roleRank(existingByEmail.role)
+            ? mergedRole
+            : existingByEmail.role;
         user = await this.usersService.create({
           id: firebaseUid,
           email: existingByEmail.email,
           firstName: existingByEmail.firstName,
           lastName: existingByEmail.lastName,
-          role: existingByEmail.role,
+          role: roleForLink,
           isEmailVerified: decodedToken.email_verified || existingByEmail.isEmailVerified,
           isActive: existingByEmail.isActive !== false,
         });
       } else {
         const nameParts = (displayNameResolved || '').split(' ');
+        const effectiveRole = this.resolveEffectiveRole(decodedToken.role as string, emailResolved);
         user = await this.usersService.create({
           id: firebaseUid,
           email: emailResolved || decodedToken.uid + '@oauth.local',
           firstName: nameParts[0] || '',
           lastName: nameParts.slice(1).join(' ') || '',
-          role,
+          role: effectiveRole,
           isEmailVerified: decodedToken.email_verified || false,
           isActive: true,
         });
@@ -155,7 +189,10 @@ export class AuthService {
       const updates: Partial<FirestoreUser> = {};
       if (emailResolved && user.email !== emailResolved) updates.email = emailResolved;
       if (decodedToken.email_verified && !user.isEmailVerified) updates.isEmailVerified = true;
-      if ((role === 'admin' || role === 'super_admin') && user.role !== role) updates.role = role;
+      const desiredRole = this.resolveEffectiveRole(decodedToken.role as string, user.email || emailResolved);
+      if (desiredRole !== user.role && AuthService.roleRank(desiredRole) > AuthService.roleRank(user.role)) {
+        updates.role = desiredRole;
+      }
       if (Object.keys(updates).length > 0) {
         user = (await this.usersService.updateUserDoc(user.id, updates)) || user;
       }

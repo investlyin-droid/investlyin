@@ -8,6 +8,24 @@ import * as fs from 'fs';
 import helmet from 'helmet';
 import compression from 'compression';
 
+function initSentryIfConfigured() {
+  const dsn = process.env.SENTRY_DSN?.trim();
+  if (!dsn) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Sentry = require('@sentry/node');
+    Sentry.init({
+      dsn,
+      environment: process.env.NODE_ENV || 'development',
+      tracesSampleRate: 0.1,
+    });
+  } catch {
+    // @sentry/node not installed; skip
+  }
+}
+
+initSentryIfConfigured();
+
 function validateProductionEnv() {
   const isProduction = process.env.NODE_ENV === 'production';
   if (!isProduction) return;
@@ -127,19 +145,38 @@ async function bootstrap() {
   // Process error handlers for production stability
   process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    // In production, you might want to log to an error tracking service
+    if (process.env.SENTRY_DSN?.trim()) {
+      try {
+        const Sentry = require('@sentry/node');
+        Sentry.captureException(reason);
+      } catch {
+        // ignore
+      }
+    }
   });
 
   process.on('uncaughtException', (error: Error) => {
     console.error('Uncaught Exception:', error);
-    // Graceful shutdown
+    if (process.env.SENTRY_DSN?.trim()) {
+      try {
+        const Sentry = require('@sentry/node');
+        Sentry.captureException(error);
+      } catch {
+        // ignore
+      }
+    }
     process.exit(1);
   });
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  console.log(`🚀 Backend server running on http://localhost:${port}`);
-  console.log(`📊 Health check available at http://localhost:${port}/health`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  const env = process.env.NODE_ENV || 'development';
+  if (env === 'production') {
+    console.log(`Backend listening on port ${port} (production)`);
+  } else {
+    console.log(`🚀 Backend server running on http://localhost:${port}`);
+    console.log(`📊 Health check available at http://localhost:${port}/health`);
+    console.log(`🌍 Environment: ${env}`);
+  }
 }
 bootstrap();

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { isFirebaseConfigMissing } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
@@ -12,7 +11,6 @@ export default function AdminLoginPage() {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { login } = useAuth();
-    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,7 +21,7 @@ export default function AdminLoginPage() {
             
             // Handle 2FA requirement
             if (result.requiresTwoFactor && result.tempToken) {
-                setError('2FA is enabled. Please use the main login page to complete 2FA verification, then access /admin.');
+                setError('Complete two-factor verification on the main sign-in page, then return here.');
                 setIsSubmitting(false);
                 return;
             }
@@ -46,7 +44,7 @@ export default function AdminLoginPage() {
                         console.error('Failed to parse stored user:', e);
                     }
                 }
-                setError('Authentication failed. User data not found. Please check your credentials and try again.');
+                setError('Sign-in failed. Please try again.');
                 setIsSubmitting(false);
                 return;
             }
@@ -56,12 +54,12 @@ export default function AdminLoginPage() {
                 // Use window.location for a full page reload to ensure auth state is fresh
                 window.location.href = '/admin';
             } else {
-                setError(`Access denied. This portal is for administrative personnel only. Your role: ${user.role || 'user'}`);
+                setError('Access denied.');
                 setIsSubmitting(false);
             }
         } catch (err: any) {
             console.error('Admin login error:', err);
-            const errorMessage = err?.message || err?.toString() || 'Authentication failed. Please check your credentials.';
+            const errorMessage = err?.message || err?.toString() || 'Sign-in failed.';
             setError(errorMessage);
             setIsSubmitting(false);
         }
@@ -82,14 +80,15 @@ export default function AdminLoginPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight"><span className="text-brand-gold">bitXtrade</span> Admin Portal</h1>
-                    <p className="text-brand-text-secondary mt-1 text-sm">Administrative Control Center</p>
-                    <p className="text-brand-text-secondary/80 mt-0.5 text-xs">Sign in with your Firebase account (same as main login)</p>
+                    <h1 className="text-2xl font-bold text-white tracking-tight"><span className="text-brand-gold">Investlyin</span> Admin</h1>
+                    <p className="text-brand-text-secondary mt-1 text-sm">Sign in to continue</p>
                 </div>
 
                 {typeof window !== 'undefined' && isFirebaseConfigMissing() && (
                     <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 px-4 py-3 rounded-lg mb-4 text-xs font-medium text-center">
-                        Production: set NEXT_PUBLIC_FIREBASE_* in your environment.
+                        {process.env.NODE_ENV === 'development'
+                            ? 'Firebase is not configured for this build.'
+                            : 'Sign-in is temporarily unavailable.'}
                     </div>
                 )}
                 {error && (
@@ -104,20 +103,21 @@ export default function AdminLoginPage() {
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                         <label className="block text-xs font-semibold text-brand-text-secondary uppercase tracking-wider mb-2 ml-1">
-                            Administrator Email
+                            Email
                         </label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full bg-[#1A1D23] border border-brand-border text-white text-sm rounded-lg focus:ring-1 focus:ring-brand-gold focus:border-brand-gold outline-none p-3 transition-all duration-200"
-                            placeholder="admin@platform.com"
+                            placeholder="name@company.com"
+                            autoComplete="email"
                             required
                         />
                     </div>
                     <div>
                         <label className="block text-xs font-semibold text-brand-text-secondary uppercase tracking-wider mb-2 ml-1">
-                            Access Key
+                            Password
                         </label>
                         <input
                             type="password"
@@ -125,6 +125,7 @@ export default function AdminLoginPage() {
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full bg-[#1A1D23] border border-brand-border text-white text-sm rounded-lg focus:ring-1 focus:ring-brand-gold focus:border-brand-gold outline-none p-3 transition-all duration-200"
                             placeholder="••••••••"
+                            autoComplete="current-password"
                             required
                         />
                     </div>
@@ -132,13 +133,13 @@ export default function AdminLoginPage() {
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full bg-brand-gold hover:bg-[#E6C200] text-brand-obsididan font-bold py-3 rounded-lg transition-all duration-200 shadow-lg shadow-brand-gold/10 flex items-center justify-center space-x-2 active:scale-[0.98]"
+                        className="w-full bg-brand-gold hover:bg-[#E6C200] text-brand-obsidian font-bold py-3 rounded-lg transition-all duration-200 shadow-lg shadow-brand-gold/10 flex items-center justify-center space-x-2 active:scale-[0.98]"
                     >
                         {isSubmitting ? (
                             <div className="w-5 h-5 border-2 border-brand-obsidian/30 border-t-brand-obsidian rounded-full animate-spin"></div>
                         ) : (
                             <>
-                                <span>Authenticate</span>
+                                <span>Sign in</span>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                 </svg>
@@ -147,11 +148,13 @@ export default function AdminLoginPage() {
                     </button>
                 </form>
 
-                <div className="mt-8 pt-6 border-t border-brand-border flex items-center justify-between">
+                <div className="mt-8 pt-6 border-t border-brand-border flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <Link href="/login" className="text-xs text-brand-text-secondary hover:text-brand-gold transition-colors">
-                        User Login Portal
+                        Back to sign in
                     </Link>
-                    <span className="text-[10px] text-brand-text-secondary uppercase tracking-widest font-medium">Secured Node v4.0</span>
+                    <Link href="/login?reset=1" className="text-xs text-brand-text-secondary hover:text-brand-gold transition-colors">
+                        Forgot password?
+                    </Link>
                 </div>
             </div>
         </div>

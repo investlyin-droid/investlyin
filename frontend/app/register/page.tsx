@@ -136,13 +136,15 @@ function RegisterContent() {
 
                 <div className="relative glass-panel rounded-[40px] p-12 border border-white/10 shadow-2xl">
                     <div className="flex flex-col items-center mb-10">
-                        <div className="text-3xl font-black italic tracking-tighter text-brand-gold mb-2">bit<span className="text-white">X</span><span className="font-black text-brand-gold">trade</span></div>
+                        <div className="text-3xl font-black italic tracking-tighter text-brand-gold mb-2"><span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span></div>
                         <p className="text-brand-text-secondary text-sm font-medium">Create your trading account</p>
                     </div>
 
                     {typeof window !== 'undefined' && isFirebaseConfigMissing() && (
                         <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 px-4 py-3 rounded-xl mb-6 text-xs font-medium text-center mt-4">
-                            Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* in .env.local (see .env.example). Google and Apple sign-up are disabled until then.
+                            {process.env.NODE_ENV === 'development'
+                                ? 'Firebase client is not configured. Social sign-up is disabled until env vars are set.'
+                                : 'Registration is temporarily unavailable.'}
                         </div>
                     )}
                     {error && (

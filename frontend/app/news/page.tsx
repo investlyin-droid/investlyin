@@ -61,7 +61,7 @@ export default function NewsPage() {
             <header className="relative h-14 sm:h-16 flex-shrink-0 border-b border-white/10 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 bg-brand-surface/80 backdrop-blur-md z-20">
                 <div className="flex items-center space-x-3 sm:space-x-6 md:space-x-10 flex-1 min-w-0">
                     <Link href="/dashboard" className="text-xl sm:text-2xl font-black italic tracking-tighter text-brand-gold flex-shrink-0">
-                        bit<span className="text-white">X</span><span className="font-black text-brand-gold">trade</span>
+                        <span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span>
                     </Link>
                     <nav className="hidden md:flex items-center space-x-4 lg:space-x-8 text-xs sm:text-sm font-semibold text-brand-text-secondary">
                         <Link href="/dashboard" className="hover:text-white transition-colors px-1">Trading</Link>

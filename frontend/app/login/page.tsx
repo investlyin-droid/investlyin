@@ -25,6 +25,15 @@ function LoginContent() {
     const returnTo = searchParams?.get('from') || '';
     const { login, loginWithProvider, handleRedirectResult, verify2FA } = useAuth();
 
+    useEffect(() => {
+        const openReset = searchParams?.get('reset') === '1' || searchParams?.get('forgot') === '1';
+        if (openReset && typeof window !== 'undefined' && !isFirebaseConfigMissing()) {
+            setShowPasswordReset(true);
+            setError('');
+            setResetMessage('');
+        }
+    }, [searchParams]);
+
     // Check for OAuth redirect result when page loads
     useEffect(() => {
         let isMounted = true;
@@ -178,19 +187,25 @@ const path = returnTo && returnTo.startsWith('/') ? returnTo : ((userData.role =
         e.preventDefault();
         setError('');
         setResetMessage('');
-        
-        if (!resetEmail || !resetEmail.includes('@')) {
+
+        if (typeof window !== 'undefined' && isFirebaseConfigMissing()) {
+            setError('Sign-in is not configured.');
+            return;
+        }
+
+        const addr = resetEmail.trim();
+        if (!addr || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addr)) {
             setError('Please enter a valid email address');
             return;
         }
 
         setIsSubmitting(true);
         try {
-            await FirebaseAuthService.resetPassword(resetEmail);
-            setResetMessage('Password reset email sent! Please check your inbox.');
+            await FirebaseAuthService.resetPassword(addr);
+            setResetMessage('If an account exists for that email, you will receive reset instructions shortly.');
             setResetEmail('');
         } catch (err: any) {
-            setError(err.message || 'Failed to send password reset email. Please try again.');
+            setError(err.message || 'Could not send reset email. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -232,21 +247,32 @@ const path = returnTo && returnTo.startsWith('/') ? returnTo : ((userData.role =
 
                 <div className="relative glass-panel rounded-[40px] p-12 border border-white/10 shadow-2xl">
                     <div className="flex flex-col items-center mb-12">
-                        <div className="text-3xl font-black italic tracking-tighter text-brand-gold mb-2">
-                            {show2FA ? '2FA VERIFICATION' : showPasswordReset ? 'RESET PASSWORD' : 'bit'} <span className="text-white">{show2FA || showPasswordReset ? '' : 'X'}</span><span className="font-black text-brand-gold">{show2FA || showPasswordReset ? '' : 'trade'}</span>
+                        <div className="text-3xl font-black italic tracking-tighter text-brand-gold mb-2 text-center">
+                            {show2FA ? (
+                                '2FA VERIFICATION'
+                            ) : showPasswordReset ? (
+                                'RESET PASSWORD'
+                            ) : (
+                                <>
+                                    <span className="text-white">Invest</span>
+                                    <span className="font-black text-brand-gold">lyin</span>
+                                </>
+                            )}
                         </div>
                         <p className="text-brand-text-secondary text-sm font-medium">
-                            {show2FA ? 'Enter the code from your authenticator app' : showPasswordReset ? 'Enter your email to receive a password reset link' : 'Professional CFD Trading Platform'}
+                            {show2FA ? 'Enter the code from your authenticator app' : showPasswordReset ? 'Enter your email to receive a password reset link' : 'Investlyin — Professional CFD Trading Platform'}
                         </p>
                     </div>
 
                     {typeof window !== 'undefined' && isFirebaseConfigMissing() && (
                         <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 px-4 py-3 rounded-xl mb-6 text-xs font-medium text-center">
-                            Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, NEXT_PUBLIC_FIREBASE_PROJECT_ID and NEXT_PUBLIC_FIREBASE_APP_ID in .env.local (see .env.example). Google and Apple sign-in will be disabled until then.
+                            {process.env.NODE_ENV === 'development'
+                                ? 'Firebase client is not configured. Social sign-in is disabled until env vars are set.'
+                                : 'Sign-in is temporarily unavailable.'}
                         </div>
                     )}
                     {error && (
-                        <div className="bg-brand-red/10 border border-brand-red/20 text-brand-red px-4 py-3 rounded-xl mb-8 text-xs font-semibold text-center">
+                        <div data-testid="login-error" className="bg-brand-red/10 border border-brand-red/20 text-brand-red px-4 py-3 rounded-xl mb-8 text-xs font-semibold text-center">
                             {error}
                         </div>
                     )}
@@ -326,10 +352,15 @@ const path = returnTo && returnTo.startsWith('/') ? returnTo : ((userData.role =
                             <div className="text-center pt-2">
                                 <button
                                     type="button"
-                                    onClick={() => setShowPasswordReset(true)}
-                                    className="text-brand-text-secondary text-xs hover:text-brand-gold transition-colors underline"
+                                    onClick={() => {
+                                        setShowPasswordReset(true);
+                                        setError('');
+                                        setResetMessage('');
+                                    }}
+                                    disabled={typeof window !== 'undefined' && isFirebaseConfigMissing()}
+                                    className="text-brand-text-secondary text-xs hover:text-brand-gold transition-colors underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
                                 >
-                                    Forgot Password?
+                                    Forgot password?
                                 </button>
                             </div>
 

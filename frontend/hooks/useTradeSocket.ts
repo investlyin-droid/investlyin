@@ -6,6 +6,8 @@ import { getSocketIoUrl } from '@/lib/socket';
 
 interface UseTradeSocketOptions {
   userId: string | undefined;
+  /** JWT access_token — required for /trades namespace */
+  token: string | undefined;
   onTradeOpened?: (trade: any) => void;
   onTradeClosed?: (trade: any) => void;
   onTradeUpdated?: (trade: any) => void;
@@ -15,6 +17,7 @@ interface UseTradeSocketOptions {
 
 export function useTradeSocket({
   userId,
+  token,
   onTradeOpened,
   onTradeClosed,
   onTradeUpdated,
@@ -26,12 +29,11 @@ export function useTradeSocket({
   callbacksRef.current = { onTradeOpened, onTradeClosed, onTradeUpdated, onTradeDeleted, onBalanceUpdated };
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !token) return;
 
     const baseUrl = getSocketIoUrl();
     const socket = io(`${baseUrl}/trades`, {
-      auth: { userId },
-      query: { userId },
+      auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
     });
@@ -72,7 +74,7 @@ export function useTradeSocket({
         s.once('connect', () => s.disconnect());
       }
     };
-  }, [userId]);
+  }, [userId, token]);
 
   return { socket: socketRef.current };
 }

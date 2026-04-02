@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { api } from '@/lib/api';
+import { auth } from '@/lib/firebase';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -71,25 +73,39 @@ export default function ProfilePage() {
             toast.error('New passwords do not match');
             return;
         }
-        if (passwordForm.newPassword.length < 8) {
-            toast.error('Password must be at least 8 characters');
+        if (passwordForm.newPassword.length < 6) {
+            toast.error('Password must be at least 6 characters');
             return;
         }
-        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(passwordForm.newPassword)) {
-            toast.error('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+        const fbUser = auth.currentUser;
+        if (!fbUser?.email) {
+            toast.error('Sign out and sign in again, then try changing your password.');
+            return;
+        }
+        const hasEmailPassword = fbUser.providerData.some((p) => p.providerId === 'password');
+        if (!hasEmailPassword) {
+            toast.error('This account did not sign up with email and password. Use the sign-in provider you used, or reset via “Forgot password?” on the login page if you added a password.');
             return;
         }
         try {
             setIsChangingPassword(true);
-            await api.put('/users/change-password', {
-                currentPassword: passwordForm.currentPassword,
-                newPassword: passwordForm.newPassword,
-            }, token!);
-            toast.success('Password changed successfully');
+            const credential = EmailAuthProvider.credential(fbUser.email, passwordForm.currentPassword);
+            await reauthenticateWithCredential(fbUser, credential);
+            await updatePassword(fbUser, passwordForm.newPassword);
+            toast.success('Password updated');
             setShowPasswordModal(false);
             setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
         } catch (error: any) {
-            toast.error(error.message || 'Failed to change password');
+            const code = error?.code || '';
+            if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+                toast.error('Current password is incorrect');
+            } else if (code === 'auth/weak-password') {
+                toast.error('New password is too weak');
+            } else if (code === 'auth/requires-recent-login') {
+                toast.error('Please sign out, sign in again, then change your password');
+            } else {
+                toast.error(error?.message || 'Could not update password');
+            }
         } finally {
             setIsChangingPassword(false);
         }
@@ -254,7 +270,7 @@ export default function ProfilePage() {
             <header className="relative h-14 sm:h-16 flex-shrink-0 border-b border-white/10 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 bg-brand-surface/80 backdrop-blur-md z-20">
                 <div className="flex items-center space-x-3 sm:space-x-6 md:space-x-10 flex-1 min-w-0">
                     <Link href="/dashboard" className="text-xl sm:text-2xl font-black italic tracking-tighter text-brand-gold flex-shrink-0">
-                        bit<span className="text-white">X</span><span className="font-black text-brand-gold">trade</span>
+                        <span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span>
                     </Link>
                     <nav className="hidden md:flex items-center space-x-4 lg:space-x-8 text-xs sm:text-sm font-semibold text-brand-text-secondary">
                         <Link href="/dashboard" className="hover:text-white transition-colors px-1">Trading</Link>

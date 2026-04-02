@@ -17,6 +17,7 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   ConfirmationResult,
+  type ActionCodeSettings,
 } from 'firebase/auth';
 import { auth, isFirebaseConfigMissing } from './firebase';
 
@@ -60,7 +61,7 @@ export class FirebaseAuthService {
       return userCredential;
     } catch (error: any) {
       const authError = error as AuthError;
-      throw this.formatError(authError);
+      this.throwAsAuthError(authError);
     }
   }
 
@@ -80,7 +81,7 @@ export class FirebaseAuthService {
       return userCredential;
     } catch (error: any) {
       const authError = error as AuthError;
-      throw this.formatError(authError);
+      this.throwAsAuthError(authError);
     }
   }
 
@@ -92,19 +93,50 @@ export class FirebaseAuthService {
       await signOut(auth);
     } catch (error: any) {
       const authError = error as AuthError;
-      throw this.formatError(authError);
+      this.throwAsAuthError(authError);
     }
   }
 
   /**
-   * Send password reset email
+   * Send password reset email (Firebase). Uses continue URL back to /login after reset when in browser.
    */
   static async resetPassword(email: string): Promise<void> {
+    if (isFirebaseConfigMissing()) {
+      this.throwAsAuthError({
+        code: 'auth/configuration-error',
+        message: 'Sign-in is not configured.',
+      } as AuthError);
+    }
+    const trimmed = email.trim();
+    if (!trimmed) {
+      this.throwAsAuthError({
+        code: 'auth/invalid-email',
+        message: 'Enter a valid email address.',
+      } as AuthError);
+    }
     try {
-      await sendPasswordResetEmail(auth, email);
+      if (typeof window !== 'undefined') {
+        try {
+          const settings: ActionCodeSettings = {
+            url: `${window.location.origin}/login`,
+            handleCodeInApp: false,
+          };
+          await sendPasswordResetEmail(auth, trimmed, settings);
+          return;
+        } catch (e: any) {
+          const c = e?.code || '';
+          if (
+            c !== 'auth/unauthorized-continue-uri' &&
+            c !== 'auth/invalid-continue-uri'
+          ) {
+            throw e;
+          }
+          // Continue URL not allowed — still send reset using Firebase default handler.
+        }
+      }
+      await sendPasswordResetEmail(auth, trimmed);
     } catch (error: any) {
-      const authError = error as AuthError;
-      throw this.formatError(authError);
+      this.throwAsAuthError(error as AuthError);
     }
   }
 
@@ -120,7 +152,7 @@ export class FirebaseAuthService {
    */
   static async signInWithGoogle(): Promise<void> {
     if (isFirebaseConfigMissing()) {
-      throw this.formatError({
+      this.throwAsAuthError({
         code: 'auth/configuration-error',
         message: 'Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* in .env.local (see .env.example).',
       } as AuthError);
@@ -142,10 +174,7 @@ export class FirebaseAuthService {
       // The result should be handled via getRedirectResult() after redirect
     } catch (error: any) {
       console.error('Google sign-in redirect error:', error);
-      const authError = error as AuthError;
-      const formattedError = this.formatError(authError);
-      console.error('Formatted error:', formattedError);
-      throw formattedError;
+      this.throwAsAuthError(error as AuthError);
     }
   }
 
@@ -154,7 +183,7 @@ export class FirebaseAuthService {
    */
   static async signInWithApple(): Promise<void> {
     if (isFirebaseConfigMissing()) {
-      throw this.formatError({
+      this.throwAsAuthError({
         code: 'auth/configuration-error',
         message: 'Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* in .env.local (see .env.example).',
       } as AuthError);
@@ -169,7 +198,7 @@ export class FirebaseAuthService {
       // The result should be handled via getRedirectResult() after redirect
     } catch (error: any) {
       const authError = error as AuthError;
-      throw this.formatError(authError);
+      this.throwAsAuthError(authError);
     }
   }
 
@@ -195,9 +224,8 @@ export class FirebaseAuthService {
       }
       
       const authError = error as AuthError;
-      const formattedError = this.formatError(authError);
-      console.error('Formatted redirect error:', formattedError);
-      throw formattedError;
+      console.error('Formatted redirect error:', authError);
+      this.throwAsAuthError(authError);
     }
   }
 
@@ -210,7 +238,7 @@ export class FirebaseAuthService {
       return await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
     } catch (error: any) {
       const authError = error as AuthError;
-      throw this.formatError(authError);
+      this.throwAsAuthError(authError);
     }
   }
 
@@ -236,12 +264,23 @@ export class FirebaseAuthService {
   }
 
   /**
+   * Throw an Error with .code so catch blocks and console show a proper message (plain objects often log as {}).
+   */
+  private static throwAsAuthError(error: AuthError): never {
+    const f = this.formatError(error);
+    const err = new Error(f.message) as Error & { code: string };
+    err.code = f.code;
+    throw err;
+  }
+
+  /**
    * Format Firebase auth errors to user-friendly messages
    */
   private static formatError(error: AuthError): FirebaseAuthError {
+    const rawCode = (error as AuthError)?.code || '';
     let message = 'An error occurred during authentication.';
 
-    switch (error.code) {
+    switch (rawCode) {
       case 'auth/email-already-in-use':
         message = 'This email is already registered. Please sign in instead.';
         break;
@@ -250,6 +289,10 @@ export class FirebaseAuthService {
         break;
       case 'auth/operation-not-allowed':
         message = 'This sign-in method (Google or Apple) is not enabled. Enable it in Firebase Console under Authentication > Sign-in method.';
+        break;
+      case 'auth/configuration-not-found':
+        message =
+          'Sign-in provider is not configured in Firebase. Open Firebase Console → Authentication → Sign-in method, click Get started if needed, then enable Google (and Apple if you use it). Save, wait a minute, and try again.';
         break;
       case 'auth/weak-password':
         message = 'Password is too weak. Please use at least 6 characters.';
@@ -274,6 +317,10 @@ export class FirebaseAuthService {
         break;
       case 'auth/unauthorized-domain':
         message = 'This domain is not authorized for OAuth. Please contact support or use localhost.';
+        break;
+      case 'auth/unauthorized-continue-uri':
+        message =
+          'Password reset link domain is not authorized. In Firebase Console → Authentication → Settings, add this site to Authorized domains.';
         break;
       case 'auth/operation-not-supported-in-this-environment':
         message = 'Google sign-in is not supported in this environment. Please use a different browser or device.';
@@ -327,14 +374,14 @@ export class FirebaseAuthService {
       default:
         message = error.message || message;
         // Log unknown error codes for debugging
-        if (error.code && !error.code.startsWith('auth/')) {
-          console.warn('Unknown Firebase error code:', error.code);
+        if (rawCode && !rawCode.startsWith('auth/')) {
+          console.warn('Unknown Firebase error code:', rawCode);
         }
     }
 
     return {
-      code: error.code,
-      message: message,
+      code: rawCode || 'auth/unknown',
+      message,
     };
   }
 }

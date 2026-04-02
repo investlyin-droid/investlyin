@@ -1,12 +1,13 @@
 'use client';
 
 import { Suspense, useEffect, useState, useRef, useCallback } from 'react';
+import { motion } from 'motion/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { api, API_URL } from '@/lib/api';
 import Link from 'next/link';
-import type { CandlestickData, Time, IChartApi, ISeriesApi } from 'lightweight-charts';
+import { LineSeries, type CandlestickData, type Time, type IChartApi, type ISeriesApi } from 'lightweight-charts';
 import { useMarketSocket } from '@/hooks/useMarketSocket';
 import { useTradeSocket } from '@/hooks/useTradeSocket';
 
@@ -63,6 +64,8 @@ function DashboardContent() {
         closePrice: number;
         estimatedPnL: number;
     } | null>(null);
+    const [selectedIndicators, setSelectedIndicators] = useState<string[]>([]);
+    const [indicatorsOpen, setIndicatorsOpen] = useState(false);
 
     const { prices, isConnected: pricesConnected, refetchPrices } = useMarketSocket();
     
@@ -368,6 +371,7 @@ function DashboardContent() {
 
     useTradeSocket({
         userId: user?.id,
+        token: token ?? undefined,
         onTradeOpened: (trade) => {
             const sanitized = stripAdminTradeFields(trade);
             if (!sanitized?._id) return;
@@ -407,6 +411,7 @@ function DashboardContent() {
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+    const indicatorSeriesRef = useRef<Record<string, ISeriesApi<'Line'> | null>>({});
     const priceDataRef = useRef<Map<number | string, CandlestickData>>(new Map());
     const chartActiveRef = useRef(false);
     const chartSyncingRef = useRef(false); // true while reloading OHLC so live updates don't mix timeframes
@@ -446,23 +451,25 @@ function DashboardContent() {
             }
             
             const raw = await response.json();
-            const candles: CandlestickData[] = Array.isArray(raw)
-                ? raw
-                    .map((d: any) => ({
-                        time: Number(d.time) as Time,
-                        open: Number(d.open),
-                        high: Number(d.high),
-                        low: Number(d.low),
-                        close: Number(d.close),
-                    }))
-                    .filter((d: CandlestickData) =>
-                        Number.isFinite(Number(d.time)) &&
-                        Number.isFinite(d.open) &&
-                        Number.isFinite(d.high) &&
-                        Number.isFinite(d.low) &&
-                        Number.isFinite(d.close)
-                    )
-                : [];
+            const arr = Array.isArray(raw) ? raw : (raw?.candles ?? raw?.data ?? []);
+            if (!Array.isArray(arr)) return [];
+
+            const candles: CandlestickData[] = arr
+                .map((d: any) => ({
+                    time: Number(d.time) as Time,
+                    open: Number(d.open),
+                    high: Number(d.high),
+                    low: Number(d.low),
+                    close: Number(d.close),
+                }))
+                .filter((d: CandlestickData) =>
+                    Number.isFinite(Number(d.time)) &&
+                    Number.isFinite(d.open) &&
+                    Number.isFinite(d.high) &&
+                    Number.isFinite(d.low) &&
+                    Number.isFinite(d.close)
+                )
+                .sort((a, b) => Number(a.time) - Number(b.time));
 
             return candles;
         } catch (error: any) {
@@ -485,6 +492,121 @@ function DashboardContent() {
         }
     }, []);
 
+    const computeSMA = useCallback((candles: CandlestickData[], length: number) => {
+        const result: { time: Time; value: number }[] = [];
+        if (!Array.isArray(candles) || candles.length < length) return result;
+        let sum = 0;
+        for (let i = 0; i < candles.length; i++) {
+            const v = candles[i].close;
+            if (!Number.isFinite(v)) continue;
+            sum += v;
+            if (i >= length) {
+                sum -= candles[i - length].close;
+            }
+            if (i >= length - 1) {
+                result.push({ time: candles[i].time, value: sum / length });
+            }
+        }
+        return result;
+    }, []);
+
+    const computeEMA = useCallback((candles: CandlestickData[], length: number) => {
+        const result: { time: Time; value: number }[] = [];
+        if (!Array.isArray(candles) || candles.length < length) return result;
+        const k = 2 / (length + 1);
+        let ema = candles[0].close;
+        for (let i = 0; i < candles.length; i++) {
+            const c = candles[i].close;
+            if (!Number.isFinite(c)) continue;
+            if (i === 0) {
+                ema = c;
+            } else {
+                ema = c * k + ema * (1 - k);
+            }
+            if (i >= length - 1) {
+                result.push({ time: candles[i].time, value: ema });
+            }
+        }
+        return result;
+    }, []);
+
+    const computeBollinger = useCallback((candles: CandlestickData[], length: number, mult: number) => {
+        const mid = computeSMA(candles, length);
+        if (!mid.length) return { mid: [], upper: [], lower: [] as { time: Time; value: number }[] };
+        const upper: { time: Time; value: number }[] = [];
+        const lower: { time: Time; value: number }[] = [];
+        for (let i = length - 1; i < candles.length; i++) {
+            const slice = candles.slice(i - length + 1, i + 1);
+            const closes = slice.map(c => c.close).filter(v => Number.isFinite(v));
+            if (closes.length !== length) continue;
+            const mean = closes.reduce((s, v) => s + v, 0) / length;
+            const variance = closes.reduce((s, v) => s + (v - mean) * (v - mean), 0) / length;
+            const sd = Math.sqrt(variance);
+            const m = mid[upper.length]; // aligned by index
+            upper.push({ time: m.time, value: m.value + mult * sd });
+            lower.push({ time: m.time, value: m.value - mult * sd });
+        }
+        return { mid, upper, lower };
+    }, [computeSMA]);
+
+    const updateIndicators = useCallback((candles: CandlestickData[]) => {
+        const chart = chartRef.current;
+        if (!chart) return;
+
+        // Clear removed indicators
+        Object.keys(indicatorSeriesRef.current).forEach((key) => {
+            if (!selectedIndicators.includes(key) && indicatorSeriesRef.current[key]) {
+                chart.removeSeries(indicatorSeriesRef.current[key]!);
+                indicatorSeriesRef.current[key] = null;
+            }
+        });
+
+        if (!candles.length || selectedIndicators.length === 0) return;
+
+        // Helper to ensure a line series exists
+        const ensureLineSeries = (key: string, color: string) => {
+            if (!indicatorSeriesRef.current[key]) {
+                indicatorSeriesRef.current[key] = chart.addSeries(LineSeries, {
+                    color,
+                    lineWidth: 2,
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                });
+            }
+            return indicatorSeriesRef.current[key]!;
+        };
+
+        if (selectedIndicators.includes('SMA20')) {
+            const data = computeSMA(candles, 20);
+            const s = ensureLineSeries('SMA20', '#FACC15'); // gold
+            s.setData(data);
+        }
+        if (selectedIndicators.includes('SMA50')) {
+            const data = computeSMA(candles, 50);
+            const s = ensureLineSeries('SMA50', '#38BDF8'); // blue
+            s.setData(data);
+        }
+        if (selectedIndicators.includes('EMA20')) {
+            const data = computeEMA(candles, 20);
+            const s = ensureLineSeries('EMA20', '#22D3EE'); // cyan
+            s.setData(data);
+        }
+        if (selectedIndicators.includes('EMA50')) {
+            const data = computeEMA(candles, 50);
+            const s = ensureLineSeries('EMA50', '#A855F7'); // purple
+            s.setData(data);
+        }
+        if (selectedIndicators.includes('BB20_2')) {
+            const { mid, upper, lower } = computeBollinger(candles, 20, 2);
+            const midSeries = ensureLineSeries('BB20_MID', '#FBBF24'); // soft gold
+            const upperSeries = ensureLineSeries('BB20_UP', 'rgba(248, 250, 252, 0.6)');
+            const lowerSeries = ensureLineSeries('BB20_LOW', 'rgba(148, 163, 184, 0.6)');
+            midSeries.setData(mid);
+            upperSeries.setData(upper);
+            lowerSeries.setData(lower);
+        }
+    }, [computeSMA, computeEMA, computeBollinger, selectedIndicators]);
+
     // Initialize Chart (live only, no synthetic candles)
     useEffect(() => {
         setChartDataStatus('loading');
@@ -494,11 +616,12 @@ function DashboardContent() {
         const initChart = async () => {
             if (!container) return;
             try {
-                // Start OHLC fetch immediately so it runs in parallel with chart lib load and creation
-                const candlesPromise = fetchHistoricalCandles(selectedSymbol, timeframe);
-                const lw = await import('lightweight-charts');
                 const w = container.clientWidth || container.offsetWidth || 400;
                 const h = container.clientHeight || container.offsetHeight || 300;
+                if (w < 50 || h < 50) return; // avoid invalid chart size
+
+                const candlesPromise = fetchHistoricalCandles(selectedSymbol, timeframe);
+                const lw = await import('lightweight-charts');
                 const chart = lw.createChart(container, {
                     layout: {
                         background: { type: lw.ColorType.Solid, color: '#0A0E1A' },
@@ -530,12 +653,14 @@ function DashboardContent() {
 
                 chartRef.current = chart;
                 seriesRef.current = candlestickSeries;
+                indicatorSeriesRef.current = {};
                 chartActiveRef.current = true;
 
                 const candles = await candlesPromise;
                 if (chartActiveRef.current && seriesRef.current && candles.length > 0) {
                     seriesRef.current.setData(candles);
                     priceDataRef.current = new Map(candles.map((c) => [Number(c.time), c]));
+                    updateIndicators(candles);
                     setChartDataStatus('ready');
                 } else {
                     setChartDataStatus('empty');
@@ -570,7 +695,7 @@ function DashboardContent() {
                 seriesRef.current = null;
             }
         };
-    }, [fetchHistoricalCandles, selectedSymbol, timeframe, chartContainerReady]);
+    }, [fetchHistoricalCandles, selectedSymbol, timeframe, chartContainerReady, updateIndicators]);
 
     // Reload historical candles when symbol/timeframe changes (keeps chart in sync with selected timeframe)
     useEffect(() => {
@@ -586,6 +711,7 @@ function DashboardContent() {
                 }
                 seriesRef.current.setData(candles);
                 priceDataRef.current = new Map(candles.map((c) => [Number(c.time), c]));
+                updateIndicators(candles);
                 // Sync time scale with timeframe (e.g. show seconds only for 1m)
                 const chart = chartRef.current;
                 if (chart) {
@@ -602,7 +728,15 @@ function DashboardContent() {
             }
         };
         load();
-    }, [fetchHistoricalCandles, selectedSymbol, timeframe]);
+    }, [fetchHistoricalCandles, selectedSymbol, timeframe, updateIndicators]);
+
+    // Recompute indicators when selection changes, using latest candle data
+    useEffect(() => {
+        if (!chartActiveRef.current || !seriesRef.current) return;
+        const candles = Array.from(priceDataRef.current.values());
+        if (!candles.length) return;
+        updateIndicators(candles);
+    }, [selectedIndicators, updateIndicators]);
 
     // Real-time candle updates from live socket prices only (skipped while chart is syncing to new timeframe)
     useEffect(() => {
@@ -632,8 +766,9 @@ function DashboardContent() {
         const allCandles = Array.from(priceDataRef.current.values());
         if (allCandles.length === 0) return;
 
-        // Get the newest candle time - we can only update the current/most recent candle
-        const newestTime = Math.max(...allCandles.map(c => Number(c.time)));
+        const times = allCandles.map((c) => Number(c.time)).filter(Number.isFinite);
+        if (times.length === 0) return;
+        const newestTime = Math.max(...times);
 
         // Only update if this is the current candle period (newest or newer)
         // This prevents trying to update older candles which causes the error
@@ -663,7 +798,6 @@ function DashboardContent() {
 
         priceDataRef.current.set(candleTimeNum, next);
 
-        // Update the chart - only for current/newest candle period
         if (!chartActiveRef.current || !seriesRef.current) return;
         try {
             if (existing) {
@@ -673,6 +807,15 @@ function DashboardContent() {
             } else {
                 const sortedCandles = [...allCandles, next].sort((a, b) => Number(a.time) - Number(b.time));
                 seriesRef.current.setData(sortedCandles);
+                priceDataRef.current = new Map(sortedCandles.map((c) => [Number(c.time), c]));
+            }
+
+            // Update indicators on each real-time candle update
+            if (selectedIndicators.length > 0) {
+                const candlesForIndicators = Array.from(priceDataRef.current.values()).sort(
+                    (a, b) => Number(a.time) - Number(b.time),
+                );
+                updateIndicators(candlesForIndicators);
             }
         } catch (error: any) {
             const errorMsg = error?.message || String(error);
@@ -906,12 +1049,17 @@ function DashboardContent() {
     const totalProfit = closedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
 
     return (
-        <div className="h-screen flex flex-col bg-brand-obsidian text-white overflow-hidden">
+        <motion.div
+            className="h-screen flex flex-col bg-brand-obsidian text-white overflow-hidden"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+        >
             {/* Top Navigation Bar */}
             <header className="relative h-14 sm:h-16 flex-shrink-0 border-b border-white/10 flex items-center justify-between px-4 sm:px-5 md:px-6 lg:px-8 bg-brand-surface/80 backdrop-blur-md z-20">
                 <div className="flex items-center space-x-3 sm:space-x-6 md:space-x-10 flex-1 min-w-0">
                     <Link href="/dashboard" className="text-xl sm:text-2xl font-black italic tracking-tighter text-brand-gold flex-shrink-0">
-                        bit<span className="text-white">X</span><span className="font-black text-brand-gold">trade</span>
+                        <span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span>
                     </Link>
                     <nav className="hidden md:flex items-center space-x-4 lg:space-x-8 text-xs sm:text-sm font-semibold text-brand-text-secondary">
                         <Link href="/dashboard" className="text-brand-gold border-b-2 border-brand-gold pb-1 px-1">Trading</Link>
@@ -977,12 +1125,20 @@ function DashboardContent() {
                 {mobileMenuOpen && (
                     <>
                         {/* Backdrop */}
-                        <div 
+                        <motion.div 
                             className="md:hidden fixed inset-0 bg-black/50 z-30"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.18 }}
                             onClick={() => setMobileMenuOpen(false)}
                         />
                         {/* Menu */}
-                        <div className="md:hidden absolute top-full left-0 right-0 bg-brand-surface border-b border-white/10 z-40 shadow-lg max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+                        <motion.div
+                            className="md:hidden absolute top-full left-0 right-0 bg-brand-surface border-b border-white/10 z-40 shadow-lg max-h-[calc(100vh-3.5rem)] overflow-y-auto"
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.22, ease: 'easeOut' }}
+                        >
                             <nav className="flex flex-col py-2">
                                 <Link
                                     href="/dashboard"
@@ -1050,7 +1206,7 @@ function DashboardContent() {
                                     Logout
                                 </button>
                             </div>
-                        </div>
+                        </motion.div>
                     </>
                 )}
             </header>
@@ -1148,32 +1304,110 @@ function DashboardContent() {
                                 );
                             })()}
                         </div>
-                        <div className="flex items-center gap-1 sm:gap-2 flex-nowrap overflow-x-auto">
-                            {TIMEFRAME_OPTIONS.map(({ value, label }) => (
+                        <div className="flex items-center gap-2 sm:gap-3 flex-nowrap">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                                {TIMEFRAME_OPTIONS.map(({ value, label }) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => setTimeframe(value)}
+                                        className={`shrink-0 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors ${
+                                            timeframe === value
+                                                ? 'bg-brand-gold/20 text-brand-gold'
+                                                : 'text-brand-text-secondary hover:text-white hover:bg-white/5'
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="h-6 w-px bg-white/10 hidden sm:block" />
+                            <div className="relative">
                                 <button
-                                    key={value}
-                                    onClick={() => setTimeframe(value)}
-                                    className={`shrink-0 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors ${
-                                        timeframe === value
-                                            ? 'bg-brand-gold/20 text-brand-gold'
-                                            : 'text-brand-text-secondary hover:text-white hover:bg-white/5'
-                                    }`}
+                                    type="button"
+                                    onClick={() => setIndicatorsOpen((v) => !v)}
+                                    className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-white/10 bg-brand-surface/40 hover:bg-white/5 text-[10px] sm:text-xs font-semibold text-brand-text-secondary hover:text-white transition-colors shrink-0"
                                 >
-                                    {label}
+                                    <span className="hidden sm:inline">Indicators</span>
+                                    <span className="sm:hidden">Ind.</span>
+                                    {selectedIndicators.length > 0 && (
+                                        <span className="ml-1 rounded-full bg-brand-gold/20 text-brand-gold px-1.5 py-0.5 text-[9px]">
+                                            {selectedIndicators.length}
+                                        </span>
+                                    )}
+                                    <svg
+                                        className={`w-3 h-3 text-brand-text-secondary transition-transform ${indicatorsOpen ? 'rotate-180' : ''}`}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </button>
-                            ))}
+                                {indicatorsOpen && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-40"
+                                            onClick={() => setIndicatorsOpen(false)}
+                                        />
+                                        <div className="absolute right-0 mt-2 w-44 sm:w-52 bg-brand-surface border border-white/10 rounded-lg shadow-xl z-50 py-1">
+                                            {[
+                                                { id: 'SMA20', label: '20-period SMA', description: 'Short-term trend (simple)' },
+                                                { id: 'SMA50', label: '50-period SMA', description: 'Medium-term trend (simple)' },
+                                                { id: 'EMA20', label: '20-period EMA', description: 'Short-term trend (exponential)' },
+                                                { id: 'EMA50', label: '50-period EMA', description: 'Medium-term trend (exponential)' },
+                                                { id: 'BB20_2', label: 'Bollinger Bands (20, 2)', description: 'Volatility bands around SMA20' },
+                                            ].map(({ id, label, description }) => {
+                                                const active = selectedIndicators.includes(id);
+                                                return (
+                                                    <button
+                                                        key={id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedIndicators((prev) =>
+                                                                prev.includes(id)
+                                                                    ? prev.filter((x) => x !== id)
+                                                                    : [...prev, id]
+                                                            );
+                                                        }}
+                                                        className={`w-full px-3 py-2 text-left text-[11px] sm:text-xs flex items-center justify-between gap-2 hover:bg-white/5 ${
+                                                            active ? 'text-brand-gold' : 'text-brand-text-secondary'
+                                                        }`}
+                                                    >
+                                                        <span>
+                                                            <span className="block font-semibold">{label}</span>
+                                                            <span className="block text-[10px] opacity-75">{description}</span>
+                                                        </span>
+                                                        <span
+                                                            className={`w-2.5 h-2.5 rounded-full border ${
+                                                                active
+                                                                    ? 'bg-brand-gold border-brand-gold'
+                                                                    : 'border-white/20'
+                                                            }`}
+                                                        />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 
                     {/* Chart - explicit min-height, overflow hidden to avoid scrollbar glitch */}
-                    <div className="flex-grow relative p-4 sm:p-5 md:p-6 min-h-[320px] sm:min-h-[380px] md:min-h-[400px] flex flex-col overflow-hidden">
+                    <motion.div
+                        className="flex-grow relative p-4 sm:p-5 md:p-6 min-h-[320px] sm:min-h-[380px] md:min-h-[400px] flex flex-col overflow-hidden"
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, ease: 'easeOut', delay: 0.05 }}
+                    >
                         <div className="relative w-full flex-1 min-h-[280px] sm:min-h-[320px] md:min-h-[360px] overflow-hidden">
                             <div
                                 ref={(el) => {
                                     (chartContainerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
                                     if (el && !chartContainerReady) setChartContainerReady(true);
                                 }}
-                                className="absolute inset-0 w-full h-full rounded-lg sm:rounded-xl bg-brand-obsidian border border-white/10 shadow-2xl overflow-hidden"
+                                className="absolute inset-0 w-full h-full min-w-[200px] min-h-[200px] rounded-lg sm:rounded-xl bg-brand-obsidian border border-white/10 shadow-2xl overflow-hidden"
                             />
                             {(chartDataStatus === 'loading' || chartDataStatus === 'empty') && (
                                 <div className="absolute inset-0 flex items-center justify-center rounded-lg sm:rounded-xl bg-brand-obsidian/95 border border-white/10 pointer-events-none">
@@ -1183,7 +1417,7 @@ function DashboardContent() {
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </motion.div>
 
                     {/* Positions/History/Orders Tabs */}
                     <div className="h-64 sm:h-72 md:h-80 border-t border-white/10 flex flex-col bg-brand-surface/40">
@@ -1254,7 +1488,12 @@ function DashboardContent() {
                                                         ? cmp.toFixed(currentDecimals)
                                                         : (!pricesConnected ? 'Connecting…' : '—');
                                                     return (
-                                                        <tr key={trade._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                                        <motion.tr
+                                                            key={trade._id}
+                                                            whileHover={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
+                                                            transition={{ duration: 0.12 }}
+                                                            className="border-b border-white/5"
+                                                        >
                                                             <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 font-bold text-white text-xs sm:text-sm">{trade.symbol}</td>
                                                             <td className={`px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-center font-semibold text-xs sm:text-sm ${trade.direction === 'BUY' ? 'text-brand-green' : 'text-brand-red'}`}>
                                                                 {trade.direction}
@@ -1277,7 +1516,7 @@ function DashboardContent() {
                                                                         Close
                                                                     </button>
                                                             </td>
-                                                        </tr>
+                                                        </motion.tr>
                                                     );
                                                 })}
                                             </tbody>
@@ -1368,7 +1607,7 @@ function DashboardContent() {
                                             ) : (
                                                 <input type="number" step="0.00001" value={orderForm.triggerPrice} onChange={e => setOrderForm({ ...orderForm, triggerPrice: e.target.value })} className="input-field rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm" placeholder="Trigger price" />
                                             )}
-                                            <button
+                                            <motion.button
                                                 disabled={orderSubmitting || (orderForm.orderType === 'LIMIT' ? !orderForm.limitPrice : !orderForm.triggerPrice)}
                                                 onClick={async () => {
                                                     setOrderSubmitting(true);
@@ -1390,10 +1629,12 @@ function DashboardContent() {
                                                         setOrderSubmitting(false);
                                                     }
                                                 }}
+                                                whileHover={{ scale: 1.03, boxShadow: '0 0 24px rgba(250, 204, 21, 0.25)' }}
+                                                whileTap={{ scale: 0.97 }}
                                                 className="py-2 sm:py-2.5 bg-brand-gold/20 hover:bg-brand-gold/30 text-brand-gold rounded-lg font-semibold text-xs sm:text-sm disabled:opacity-50 col-span-1 sm:col-span-2 lg:col-span-1"
                                             >
                                                 {orderSubmitting ? 'Placing...' : 'Place order'}
-                                            </button>
+                                            </motion.button>
                                         </div>
                                     </div>
                                     {pendingOrders.length === 0 ? (
@@ -1864,8 +2105,18 @@ function DashboardContent() {
 
             {/* Close Trade Confirmation Modal */}
             {showCloseConfirm && pendingClose && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
-                    <div className="w-full max-w-md rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-br from-brand-surface via-brand-surface/95 to-brand-surface border border-white/20 shadow-2xl">
+                <motion.div
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                >
+                    <motion.div
+                        className="w-full max-w-md rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-br from-brand-surface via-brand-surface/95 to-brand-surface border border-white/20 shadow-2xl"
+                        initial={{ opacity: 0, scale: 0.9, y: 8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ duration: 0.22, ease: 'easeOut' }}
+                    >
                         {/* Header */}
                         <div className="p-4 sm:p-6 bg-gradient-to-r from-brand-red/20 via-brand-red/10 to-transparent border-b border-brand-red/30">
                             <div className="flex items-center justify-between">
@@ -1943,10 +2194,10 @@ function DashboardContent() {
                                 Confirm Close
                             </button>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
-        </div>
+        </motion.div>
     );
 }
 

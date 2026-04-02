@@ -312,19 +312,19 @@ export default function LandingPage() {
       <section id="about" className="py-32 bg-brand-obsidian scroll-mt-20">
         <div className="content-container">
           <div className="mb-20 text-center">
-            <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">About bitXtrade</h2>
+            <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">About Investlyin</h2>
             <h3 className="text-4xl font-black tracking-tight">Built by Traders, For Traders</h3>
           </div>
 
           <div className="max-w-4xl mx-auto">
             <div className="glass-card p-12 rounded-3xl border border-white/5 mb-8">
               <p className="text-brand-text-secondary text-lg leading-relaxed font-medium mb-6">
-                bitXtrade is a leading global trading platform designed to bridge the gap between retail traders and institutional-grade execution. 
+                Investlyin is a leading global trading platform designed to bridge the gap between retail traders and institutional-grade execution. 
                 We combine cutting-edge technology with deep market liquidity to deliver an unparalleled trading experience.
               </p>
               <p className="text-brand-text-secondary text-lg leading-relaxed font-medium mb-6">
                 Our mission is to democratize access to professional trading tools and market access. Whether you're a seasoned professional 
-                or just starting your trading journey, bitXtrade provides the infrastructure, security, and support you need to succeed.
+                or just starting your trading journey, Investlyin provides the infrastructure, security, and support you need to succeed.
               </p>
               <p className="text-brand-text-secondary text-lg leading-relaxed font-medium">
                 With over 1,000,000 active traders worldwide, we've built a platform that scales from individual retail accounts to 
@@ -927,12 +927,12 @@ export default function LandingPage() {
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Regulations</h2>
             <h3 className="text-4xl font-black tracking-tight">Regulatory Compliance</h3>
             <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
-              bitXtrade operates in full compliance with international financial regulations and standards.
+              Investlyin operates in full compliance with international financial regulations and standards.
             </p>
           </div>
           <div className="max-w-4xl mx-auto glass-card p-12 rounded-3xl border border-white/5">
             <p className="text-brand-text-secondary text-lg leading-relaxed font-medium mb-6">
-              bitXtrade is committed to maintaining the highest standards of regulatory compliance. We operate under strict regulatory frameworks to ensure the safety and security of our clients' funds and personal information.
+              Investlyin is committed to maintaining the highest standards of regulatory compliance. We operate under strict regulatory frameworks to ensure the safety and security of our clients' funds and personal information.
             </p>
             <p className="text-brand-text-secondary text-lg leading-relaxed font-medium">
               Our platform adheres to international financial regulations including anti-money laundering (AML) policies, know your customer (KYC) requirements, and data protection standards. Client funds are held in segregated accounts, completely separate from company operations.
@@ -969,7 +969,7 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="max-w-2xl mx-auto glass-card p-12 rounded-3xl border border-white/5 text-center">
-            <p className="text-brand-text-secondary text-lg mb-6">Partner with bitXtrade to offer your clients access to institutional-grade trading services. We offer competitive partnership programs for brokers, affiliates, and technology providers.</p>
+            <p className="text-brand-text-secondary text-lg mb-6">Partner with Investlyin to offer your clients access to institutional-grade trading services. We offer competitive partnership programs for brokers, affiliates, and technology providers.</p>
             <Link href="#contact" className="inline-block px-6 py-3 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-xs rounded-lg hover:shadow-gold transition-all">Become a Partner</Link>
           </div>
         </div>
@@ -988,7 +988,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="glass-card p-8 rounded-2xl border border-white/5 text-center">
               <h4 className="text-lg font-black mb-3">Email Support</h4>
-              <p className="text-brand-text-secondary text-sm mb-4">support@bitxtrade.pro</p>
+              <p className="text-brand-text-secondary text-sm mb-4">support@investlyin.com</p>
               <p className="text-brand-text-secondary text-xs">24/7 email support</p>
             </div>
             <div className="glass-card p-8 rounded-2xl border border-white/5 text-center">
@@ -1126,15 +1126,15 @@ export default function LandingPage() {
           <div className="glass-panel p-16 rounded-[40px] border border-brand-gold/10">
             <h2 className="text-5xl font-black tracking-tight mb-8">Ready to Elevate <br />Your Trading?</h2>
             <p className="text-brand-text-secondary text-lg mb-12 max-w-xl mx-auto font-medium">
-              Join 1,000,000+ traders who trust bitXtrade for their clinical execution and institutional depth.
+              Join 1,000,000+ traders who trust Investlyin for their clinical execution and institutional depth.
             </p>
             <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-6">
               <Link href="/register" className="w-64 py-5 bg-brand-gold text-brand-obsidian font-black uppercase tracking-[0.3em] text-sm rounded-xl">Create Account</Link>
             </div>
           </div>
           <div className="mt-20 flex flex-col items-center">
-            <div className="text-sm font-black italic tracking-tighter text-brand-text-secondary opacity-50 mb-4">bit<span className="text-white">X</span><span className="font-black text-brand-gold">trade</span></div>
-            <p className="text-[10px] text-brand-text-secondary uppercase tracking-[0.2em]">© 2026 bitXtrade. All Rights Reserved.</p>
+            <div className="text-sm font-black italic tracking-tighter text-brand-text-secondary opacity-50 mb-4"><span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span></div>
+            <p className="text-[10px] text-brand-text-secondary uppercase tracking-[0.2em]">© 2026 Investlyin. All Rights Reserved.</p>
           </div>
         </div>
       </section>

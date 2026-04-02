@@ -33,6 +33,6 @@ import { FirebaseService } from './firebase.service';
   ],
   providers: [AuthService, FirebaseService, JwtStrategy],
   controllers: [AuthController],
-  exports: [AuthService, FirebaseService],
+  exports: [AuthService, FirebaseService, JwtModule],
 })
 export class AuthModule {}

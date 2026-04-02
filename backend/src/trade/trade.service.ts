@@ -15,8 +15,6 @@ import {
 import { TradeGateway } from './trade.gateway';
 import { MarketDataService } from '../market-data/market-data.service';
 import { WalletService } from '../wallet/wallet.service';
-import { LedgerService } from '../ledger/ledger.service';
-import { TransactionType } from '../ledger/schemas/ledger.schema';
 
 @Injectable()
 export class TradeService {
@@ -30,7 +28,6 @@ export class TradeService {
     private marketDataService: MarketDataService,
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
-    private ledgerService: LedgerService,
   ) {}
 
   private static readonly MIN_LOT = 0.01;
@@ -90,7 +87,10 @@ export class TradeService {
     marketPrice: number,
     sl?: number,
     tp?: number,
+    /** Set `notifyUser: false` when admin creates a trade for a user (no user socket updates). */
+    socketOpts?: { notifyUser?: boolean },
   ) {
+    const notifyUser = socketOpts?.notifyUser !== false;
     // Check if symbol exists in market data
     const symbolUpper = symbol.toUpperCase();
     const marketPriceData = this.marketDataService.getPrice(symbolUpper);
@@ -173,7 +173,11 @@ export class TradeService {
           );
           savedTrade.commission = openFee;
           await savedTrade.save();
-          this.tradeGateway.emitBalanceUpdated(userId, { balance: wallet.balance, currency: wallet.currency });
+          this.tradeGateway.emitBalanceUpdated(
+            userId,
+            { balance: wallet.balance, currency: wallet.currency },
+            { notifyUser },
+          );
         } catch (e) {
           await this.tradeModel.findByIdAndDelete(savedTrade._id);
           throw e;
@@ -182,7 +186,8 @@ export class TradeService {
     }
 
     const tradeToEmit = await this.tradeModel.findById(savedTrade._id).lean();
-    this.tradeGateway.emitTradeOpened(userId, this.sanitizeForUser(tradeToEmit));
+    const adminCopy = tradeToEmit ? { ...tradeToEmit } : tradeToEmit;
+    this.tradeGateway.emitTradeOpened(userId, this.sanitizeForUser(tradeToEmit), adminCopy, { notifyUser });
     return this.sanitizeForUser(tradeToEmit);
   }
 
@@ -237,20 +242,13 @@ export class TradeService {
 
     const closedTrade = await trade.save();
 
-    // Update wallet balance with P/L
-    const userId = trade.userId.toString();
-    const wallet = await this.walletService.getWallet(userId);
-    const balanceBefore = wallet.balance;
-    wallet.balance += trade.pnl;
-    await wallet.save();
+    /** User self-close passes callerUserId; admin force-close does not — do not push trade sockets to the user in the latter case. */
+    const notifyUser = !!callerUserId;
 
-    // Create ledger entry for trade close
-    await this.ledgerService.createEntry(
+    const userId = trade.userId.toString();
+    const wallet = await this.walletService.applyTradeCloseCredit(
       userId,
-      TransactionType.TRADE_CLOSE,
       trade.pnl,
-      balanceBefore,
-      wallet.balance,
       trade._id.toString(),
       `Trade closed: ${trade.symbol} ${trade.direction} ${trade.lotSize} lot${trade.lotSize !== 1 ? 's' : ''}`,
       {
@@ -265,14 +263,18 @@ export class TradeService {
       },
     );
 
-    // Emit balance update
-    this.tradeGateway.emitBalanceUpdated(userId, {
-      balance: wallet.balance,
-      currency: wallet.currency,
-    });
+    this.tradeGateway.emitBalanceUpdated(
+      userId,
+      {
+        balance: wallet.balance,
+        currency: wallet.currency,
+      },
+      { notifyUser },
+    );
 
-    // Emit real-time update (sanitized so user does not see admin metadata)
-    this.tradeGateway.emitTradeClosed(userId, this.sanitizeForUser(closedTrade));
+    const closedObj = closedTrade.toObject?.() ?? closedTrade;
+    const adminCopy = { ...closedObj };
+    this.tradeGateway.emitTradeClosed(userId, this.sanitizeForUser(closedObj), adminCopy, { notifyUser });
 
     return closedTrade;
   }
@@ -382,7 +384,11 @@ export class TradeService {
     }
 
     const updatedTrade = await trade.save();
-    this.tradeGateway.emitTradeUpdated(trade.userId.toString(), this.sanitizeForUser(updatedTrade));
+    const obj = updatedTrade.toObject?.() ?? updatedTrade;
+    // Admin-only path: never push trade updates to the end-user socket
+    this.tradeGateway.emitTradeUpdated(trade.userId.toString(), this.sanitizeForUser(obj), { ...obj }, {
+      notifyUser: false,
+    });
     return updatedTrade;
   }
 

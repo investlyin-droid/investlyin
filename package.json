@@ -1,0 +1,9 @@
+{
+  "name": "investlyin-monorepo",
+  "private": true,
+  "description": "Investlyin – frontend and backend under one repo",
+  "scripts": {
+    "docker:up": "docker compose up -d mongo redis",
+    "docker:down": "docker compose down"
+  }
+}

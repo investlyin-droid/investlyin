@@ -43,7 +43,7 @@ export class NewsService {
     this.httpClient = axios.create({
       timeout: 10000,
       headers: {
-        'User-Agent': 'bitXtrade/1.0',
+        'User-Agent': 'Investlyin/1.0',
       },
     });
 

@@ -37,11 +37,15 @@ export class MarketDataGateway implements OnGatewayInit, OnGatewayConnection, On
   }
 
   handleConnection(client: Socket) {
-    console.log(`Market data client connected: ${client.id}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Market data client connected: ${client.id}`);
+    }
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Market data client disconnected: ${client.id}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Market data client disconnected: ${client.id}`);
+    }
     // Remove client from all subscriptions
     this.subscribedSymbols.forEach((clients, symbol) => {
       clients.delete(client.id);

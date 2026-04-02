@@ -10,17 +10,17 @@ import {
 } from '../admin/schemas/liquidity-rule.schema';
 import { MarketDataModule } from '../market-data/market-data.module';
 import { WalletModule } from '../wallet/wallet.module';
-import { LedgerModule } from '../ledger/ledger.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     MongooseModule.forFeature([
       { name: Trade.name, schema: TradeSchema },
       { name: LiquidityRule.name, schema: LiquidityRuleSchema },
     ]),
     forwardRef(() => MarketDataModule),
     forwardRef(() => WalletModule),
-    LedgerModule,
   ],
   controllers: [TradeController],
   providers: [TradeService, TradeGateway],

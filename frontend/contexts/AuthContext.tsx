@@ -398,6 +398,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         errorMessage = 'This domain is not authorized for OAuth. Please ensure your domain is added to Firebase authorized domains, or use localhost for local development.';
       } else if (error?.code === 'auth/operation-not-allowed') {
         errorMessage = `${provider.charAt(0).toUpperCase() + provider.slice(1)} sign-in is not enabled in Firebase. Please enable it in Firebase Console under Authentication > Sign-in method.`;
+      } else if (error?.code === 'auth/configuration-not-found') {
+        errorMessage =
+          'Firebase Auth is not set up for this app: open Firebase Console → Authentication → Sign-in method, enable Google (and Apple if needed), then save. If you just created the project, click “Get started” on Authentication first.';
       }
       
       throw new Error(errorMessage);

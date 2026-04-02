@@ -13,7 +13,11 @@ export class FirebaseService implements OnModuleInit {
   onModuleInit() {
     if (admin.apps.length === 0) {
       try {
-        const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID') || 'exchange-f2346';
+        const projectId =
+          this.configService.get<string>('FIREBASE_PROJECT_ID')?.trim() ||
+          process.env.GCLOUD_PROJECT ||
+          process.env.GOOGLE_CLOUD_PROJECT ||
+          '';
 
         // 1) Explicit path to service account JSON file
         const serviceAccountPath =

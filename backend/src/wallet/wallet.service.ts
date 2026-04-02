@@ -9,6 +9,11 @@ import { RedisService } from '../redis/redis.service';
 
 const WALLET_CACHE_TTL = 10;
 
+/**
+ * Balance changes use atomic findOneAndUpdate ($inc) so they are safe on standalone MongoDB
+ * (no replica-set transactions). Ledger rows are written immediately after; if that fails,
+ * balance already moved — log/monitor in production.
+ */
 @Injectable()
 export class WalletService {
   constructor(
@@ -46,112 +51,169 @@ export class WalletService {
     return wallet;
   }
 
-  /** Get a Mongoose document for updates (bypasses cache so .save() is valid). */
-  private async getWalletForUpdate(userId: string): Promise<WalletDocument> {
-    let wallet = await this.walletModel.findOne({ userId });
-    if (!wallet) {
-      wallet = await this.createWallet(userId);
-    }
-    return wallet;
-  }
-
   private invalidateWalletCache(userId: string): void {
     if (this.redis.isEnabled()) {
       this.redis.del(`wallet:${userId}`).catch(() => {});
     }
   }
 
-  async deposit(userId: string, amount: number, description?: string) {
-    const wallet = await this.getWalletForUpdate(userId);
-    const balanceBefore = wallet.balance;
-    wallet.balance += amount;
-    await wallet.save();
-
+  async deposit(
+    userId: string,
+    amount: number,
+    description?: string,
+    metadata?: Record<string, unknown>,
+    referenceId?: string,
+  ) {
+    const updated = await this.walletModel.findOneAndUpdate(
+      { userId },
+      { $inc: { balance: amount }, $setOnInsert: { currency: 'USD' } },
+      { new: true, upsert: true },
+    );
+    if (!updated) {
+      throw new BadRequestException('Could not update wallet');
+    }
+    const balanceAfter = updated.balance;
+    const balanceBefore = balanceAfter - amount;
     await this.ledgerService.createEntry(
       userId,
       TransactionType.DEPOSIT,
       amount,
       balanceBefore,
-      wallet.balance,
-      undefined,
+      balanceAfter,
+      referenceId,
       description || 'Deposit',
+      metadata,
     );
     this.invalidateWalletCache(userId);
-    return wallet;
+    return updated;
   }
 
-  /** Deduct amount from balance (e.g. for withdrawal request). Optionally link ledger to referenceId. */
   async withdraw(
     userId: string,
     amount: number,
     description?: string,
     referenceId?: string,
   ) {
-    const wallet = await this.getWalletForUpdate(userId);
-
-    if (wallet.balance < amount) {
+    const updated = await this.walletModel.findOneAndUpdate(
+      { userId, balance: { $gte: amount } },
+      { $inc: { balance: -amount } },
+      { new: true },
+    );
+    if (!updated) {
+      const w = await this.walletModel.findOne({ userId });
+      if (!w) {
+        throw new BadRequestException('Insufficient balance');
+      }
       throw new BadRequestException('Insufficient balance');
     }
-
-    const balanceBefore = wallet.balance;
-    wallet.balance -= amount;
-    await wallet.save();
-
+    const balanceAfter = updated.balance;
+    const balanceBefore = balanceAfter + amount;
     await this.ledgerService.createEntry(
       userId,
       TransactionType.WITHDRAWAL,
       -amount,
       balanceBefore,
-      wallet.balance,
+      balanceAfter,
       referenceId,
       description || 'Withdrawal',
     );
     this.invalidateWalletCache(userId);
-    return wallet;
+    return updated;
   }
 
   async adjustBalance(userId: string, amount: number, description: string) {
-    const wallet = await this.getWalletForUpdate(userId);
-    const balanceBefore = wallet.balance;
-    wallet.balance += amount;
-    await wallet.save();
-
+    let updated: WalletDocument | null;
+    if (amount >= 0) {
+      updated = await this.walletModel.findOneAndUpdate(
+        { userId },
+        { $inc: { balance: amount }, $setOnInsert: { currency: 'USD' } },
+        { new: true, upsert: true },
+      );
+    } else {
+      const abs = -amount;
+      updated = await this.walletModel.findOneAndUpdate(
+        { userId, balance: { $gte: abs } },
+        { $inc: { balance: amount } },
+        { new: true },
+      );
+      if (!updated) {
+        throw new BadRequestException('Insufficient balance for adjustment');
+      }
+    }
+    if (!updated) {
+      throw new BadRequestException('Could not adjust wallet');
+    }
+    const balanceAfter = updated.balance;
+    const balanceBefore = balanceAfter - amount;
     await this.ledgerService.createEntry(
       userId,
       TransactionType.ADMIN_ADJUSTMENT,
       amount,
       balanceBefore,
-      wallet.balance,
+      balanceAfter,
       undefined,
       description,
     );
     this.invalidateWalletCache(userId);
-    return wallet;
+    return updated;
   }
 
-  /** Deduct trading/commission fee (e.g. on trade open). Records as COMMISSION in ledger. */
   async deductCommission(userId: string, amount: number, description: string, referenceId?: string): Promise<WalletDocument> {
-    const wallet = await this.getWalletForUpdate(userId);
-    if (wallet.balance < amount) {
+    const updated = await this.walletModel.findOneAndUpdate(
+      { userId, balance: { $gte: amount } },
+      { $inc: { balance: -amount } },
+      { new: true },
+    );
+    if (!updated) {
       throw new BadRequestException(`Insufficient balance for fee ($${amount.toFixed(2)} required)`);
     }
-    const balanceBefore = wallet.balance;
-    wallet.balance -= amount;
-    await wallet.save();
+    const balanceAfter = updated.balance;
+    const balanceBefore = balanceAfter + amount;
     await this.ledgerService.createEntry(
       userId,
       TransactionType.COMMISSION,
       -amount,
       balanceBefore,
-      wallet.balance,
+      balanceAfter,
       referenceId,
       description,
     );
     this.invalidateWalletCache(userId);
-    return wallet;
+    return updated;
   }
 
-  /** Sum of all wallet balances (for admin overview). Uses MongoDB aggregation. */
+  /** P/L credit when a trade closes — atomic $inc on balance */
+  async applyTradeCloseCredit(
+    userId: string,
+    pnl: number,
+    tradeId: string,
+    description: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<WalletDocument> {
+    const updated = await this.walletModel.findOneAndUpdate(
+      { userId },
+      { $inc: { balance: pnl }, $setOnInsert: { currency: 'USD' } },
+      { new: true, upsert: true },
+    );
+    if (!updated) {
+      throw new BadRequestException('Could not apply trade settlement');
+    }
+    const balanceAfter = updated.balance;
+    const balanceBefore = balanceAfter - pnl;
+    await this.ledgerService.createEntry(
+      userId,
+      TransactionType.TRADE_CLOSE,
+      pnl,
+      balanceBefore,
+      balanceAfter,
+      tradeId,
+      description,
+      metadata,
+    );
+    this.invalidateWalletCache(userId);
+    return updated;
+  }
+
   async getTotalBalance(): Promise<number> {
     const result = await this.walletModel
       .aggregate([{ $group: { _id: null, total: { $sum: '$balance' } } }])

@@ -66,4 +66,4 @@ export const WithdrawalRequestSchema = SchemaFactory.createForClass(WithdrawalRe
 
 WithdrawalRequestSchema.index({ userId: 1, status: 1, createdAt: -1 });
 WithdrawalRequestSchema.index({ status: 1, createdAt: -1 });
-WithdrawalRequestSchema.index({ reference: 1 });
+// reference already has unique: true on the Prop, which creates the index

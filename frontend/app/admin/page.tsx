@@ -463,8 +463,7 @@ export default function AdminPage() {
 
         const baseUrl = getSocketIoUrl();
         const socket = io(`${baseUrl}/trades`, {
-            auth: { userId: user.id },
-            query: { userId: user.id, admin: 'true' },
+            auth: { token },
             transports: ['websocket', 'polling'],
             reconnection: true,
         });
@@ -496,6 +495,13 @@ export default function AdminPage() {
 
         socket.on('trade:updated', (trade: any) => {
             setTrades((prev) => prev.map((t) => (t._id === trade._id ? trade : t)));
+        });
+
+        socket.on('trade:deleted', (payload: { tradeId?: string }) => {
+            const id = payload?.tradeId;
+            if (!id) return;
+            setTrades((prev) => prev.filter((t) => t._id !== id));
+            if (loadDataRef.current) loadDataRef.current();
         });
 
         return () => {
@@ -1155,7 +1161,7 @@ export default function AdminPage() {
                                 <path fillRule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clipRule="evenodd" />
                             </svg>
                         </div>
-                        <span className="text-sm sm:text-base md:text-lg font-bold truncate"><span className="text-brand-gold">bitXtrade</span> Admin Panel</span>
+                        <span className="text-sm sm:text-base md:text-lg font-bold truncate"><span className="text-brand-gold">Investlyin</span> Admin Panel</span>
                     </div>
                     <nav className="hidden lg:flex items-center space-x-3 xl:space-x-6 text-[10px] xl:text-xs font-semibold flex-shrink-0">
                         <button
@@ -2635,7 +2641,7 @@ export default function AdminPage() {
                                                         name: e.target.value,
                                                     },
                                                 })}
-                                                placeholder="bitXtrade Ltd"
+                                                placeholder="Investlyin Ltd"
                                                 className="w-full input-field rounded-lg px-4 py-2.5"
                                             />
                                         </div>

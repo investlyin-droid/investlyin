@@ -8,7 +8,9 @@ firebase-service-account.json
 .env
 .env.local
 .env.*.local
-scripts/deploy.env
+
+# Optional local compose override (if you generate one)
+docker-compose.deploy-generated.yml
 
 # Node modules
 node_modules/
@@ -21,6 +23,9 @@ out/
 
 # Uploads (KYC, payment screenshots)
 uploads/
+
+# Local API probe output
+backend/api-test-results.json
 
 # Logs
 *.log
@@ -35,10 +40,6 @@ Thumbs.db
 # Binaries / local tools
 ngrok.exe
 *.exe
-
-# Test/playwright outputs
-frontend/playwright-report/
-frontend/test-results/
 
 # Local config that may contain secrets
 configure-payment-accounts.json
