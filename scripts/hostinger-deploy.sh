@@ -46,3 +46,5 @@ curl -sf "http://127.0.0.1:3001/health" && echo "" || echo "WARN: Backend not re
 
 echo "Frontend (if mapped): http://127.0.0.1:3000"
 echo "Next: Configure Nginx + SSL (see scripts/nginx-investlyin.conf.example)"
+echo "Optional firewall: ufw allow OpenSSH && ufw allow 'Nginx Full' && ufw enable"
+echo "One-shot (fresh VPS): sudo SETUP_NGINX=1 bash scripts/hostinger-bootstrap.sh"
