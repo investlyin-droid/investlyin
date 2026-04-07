@@ -1,4 +1,4 @@
-import { IsString, IsEnum } from 'class-validator';
+import { IsString, IsEnum, IsOptional } from 'class-validator';
 
 export enum KycStatus {
   PENDING = 'PENDING',
@@ -9,4 +9,10 @@ export enum KycStatus {
 export class UpdateKycStatusDto {
   @IsEnum(KycStatus)
   kycStatus: KycStatus;
+
+  @IsString()
+  @IsOptional()
+  reason?: string;
 }
+
+

@@ -1,4 +1,6 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import * as admin from 'firebase-admin';
+
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -40,7 +42,7 @@ export class AdminService {
     private auditService: AdminAuditService,
     private ledgerService: LedgerService,
     private ordersService: OrdersService,
-  ) {}
+  ) { }
 
   async createOrUpdateLiquidityRule(
     symbol: string,
@@ -87,7 +89,7 @@ export class AdminService {
       const closedTrades = tradesArray.filter((t) => t.status === 'CLOSED');
       const totalPnL = tradesArray.reduce((sum, t) => sum + (t.pnl || 0), 0);
       const closedPnL = closedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-      const pendingDepositSum = Array.isArray(pendingDeposits) 
+      const pendingDepositSum = Array.isArray(pendingDeposits)
         ? pendingDeposits.reduce((sum, d: any) => sum + (d.amount || 0), 0)
         : 0;
 
@@ -148,13 +150,14 @@ export class AdminService {
     return user;
   }
 
-  async setUserKycStatus(userId: string, kycStatus: string, adminId: string, adminEmail?: string) {
-    const user = await this.usersService.updateKycStatus(userId, kycStatus);
+  async setUserKycStatus(userId: string, kycStatus: string, reason: string | undefined, adminId: string, adminEmail?: string) {
+    const statusUpper = kycStatus.toUpperCase();
+    const user = await this.usersService.updateKycStatus(userId, statusUpper, reason);
     await this.auditService.log(adminId, 'USER_KYC_STATUS', {
       adminEmail,
       targetType: 'user',
       targetId: userId,
-      details: { kycStatus },
+      details: { kycStatus: statusUpper, reason },
     });
     return user;
   }
@@ -231,7 +234,7 @@ export class AdminService {
     try {
       // Use the usersService.findAll which already handles pagination
       const usersResult = await this.usersService.findAll(page, limit, sortBy, sortOrder);
-      
+
       // Ensure we have the correct structure
       if (!usersResult) {
         // Return empty result if usersResult is null/undefined
@@ -243,14 +246,14 @@ export class AdminService {
           totalPages: 0,
         };
       }
-      
+
       // Handle case where usersResult might be an array directly
       let usersArray: any[] = [];
       let total = 0;
       let resultPage = page;
       let resultLimit = limit;
       let totalPages = 0;
-      
+
       if (Array.isArray(usersResult)) {
         // If usersResult is an array, use it directly
         usersArray = usersResult;
@@ -266,12 +269,12 @@ export class AdminService {
         resultLimit = usersResult.limit || limit;
         totalPages = usersResult.totalPages || Math.ceil(total / limit);
       }
-      
+
       // Ensure usersArray is always an array
       if (!Array.isArray(usersArray)) {
         usersArray = [];
       }
-      
+
       // Populate wallet information for each user
       const usersWithWallets = await Promise.all(
         usersArray.map(async (user: any) => {
@@ -282,7 +285,7 @@ export class AdminService {
               const userObj = user?.toObject ? user.toObject() : user;
               return userObj || {};
             }
-            
+
             const wallet = await this.walletService.getWallet(userId);
             const userObj = user?.toObject ? user.toObject() : user;
             return {
@@ -567,7 +570,7 @@ export class AdminService {
           { notifyUser: false },
         );
       }
-      
+
       await this.auditService.log(adminId, 'TRADE_CREATE_FOR_USER', {
         adminEmail,
         targetType: 'trade',
@@ -584,7 +587,7 @@ export class AdminService {
           tp,
         },
       });
-      
+
       return trade;
     } catch (error: any) {
       if (error instanceof HttpException) throw error;
@@ -599,16 +602,28 @@ export class AdminService {
   async deleteUser(userId: string, adminId: string, adminEmail?: string) {
     try {
       const user = await this.usersService.findById(userId);
-      if (!user) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+
+      // Even if not in Firestore, try to delete from Firebase Auth to clean up "ghost" users
+      try {
+        await admin.auth().deleteUser(userId);
+      } catch (authError: any) {
+        console.warn(`Firebase Auth delete failed or user not found: ${authError.message}`);
+        // If it's NOT in Auth AND NOT in Firestore, then it's a real 404
+        if (!user) {
+          throw new HttpException('User not found in Auth or Firestore', HttpStatus.NOT_FOUND);
+        }
       }
-      await this.usersService.delete(userId);
+
+      if (user) {
+        await this.usersService.delete(userId);
+      }
+
       await this.auditService.log(adminId, 'USER_DELETE', {
         adminEmail,
         targetType: 'user',
         targetId: userId,
       });
-      return { success: true, message: 'User deleted' };
+      return { success: true, message: 'User deleted from system' };
     } catch (error: any) {
       if (error instanceof HttpException) throw error;
       throw new HttpException(

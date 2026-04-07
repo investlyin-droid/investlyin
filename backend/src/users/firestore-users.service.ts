@@ -16,6 +16,7 @@ export interface FirestoreUser {
   lastName: string;
   role: string;
   kycStatus?: string;
+  kycReason?: string;
   kycDocumentType?: string;
   kycDocumentNumber?: string;
   kycDocumentUrl?: string;
@@ -38,7 +39,7 @@ export interface FirestoreUser {
 
 @Injectable()
 export class FirestoreUsersService {
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService) { }
 
   /** Lazy access so Firebase can be initialized after UsersModule (e.g. in reset-admin script). */
   private getFirestore(): Firestore {
@@ -62,6 +63,7 @@ export class FirestoreUsersService {
       lastName: d.lastName || '',
       role: d.role || 'user',
       kycStatus: d.kycStatus,
+      kycReason: d.kycReason,
       kycDocumentType: d.kycDocumentType,
       kycDocumentNumber: d.kycDocumentNumber,
       kycDocumentUrl: d.kycDocumentUrl,
@@ -93,6 +95,7 @@ export class FirestoreUsersService {
     if (data.lastName !== undefined) out.lastName = data.lastName;
     if (data.role !== undefined) out.role = data.role;
     if (data.kycStatus !== undefined) out.kycStatus = data.kycStatus;
+    if (data.kycReason !== undefined) out.kycReason = data.kycReason;
     if (data.kycDocumentType !== undefined) out.kycDocumentType = data.kycDocumentType;
     if (data.kycDocumentNumber !== undefined) out.kycDocumentNumber = data.kycDocumentNumber;
     if (data.kycDocumentUrl !== undefined) out.kycDocumentUrl = data.kycDocumentUrl;
@@ -224,9 +227,9 @@ export class FirestoreUsersService {
     return this.docToUser(userId, snap.data()!);
   }
 
-  async updateKycStatus(userId: string, kycStatus: string): Promise<FirestoreUser | null> {
+  async updateKycStatus(userId: string, kycStatus: string, kycReason?: string): Promise<FirestoreUser | null> {
     const ref = this.col().doc(userId);
-    await ref.update(this.toFirestore({ kycStatus }));
+    await ref.update(this.toFirestore({ kycStatus, kycReason }));
     const snap = await ref.get();
     if (!snap.exists) return null;
     return this.docToUser(userId, snap.data()!);

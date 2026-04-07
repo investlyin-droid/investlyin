@@ -39,7 +39,7 @@ import { UpdatePaymentConfigDto } from './dto/update-payment-config.dto';
 @UseGuards(AuthGuard('jwt'), RolesGuard, AdminAllowlistGuard)
 @Roles('admin', 'super_admin')
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService) { }
 
   @Get('overview')
   async getOverview() {
@@ -247,6 +247,7 @@ export class AdminController {
       return await this.adminService.setUserKycStatus(
         userId,
         body.kycStatus,
+        body.reason,
         req.user.userId,
         req.user.email,
       );
