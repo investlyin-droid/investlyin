@@ -79,7 +79,7 @@ export default function LandingPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-gold/10 rounded-full blur-[160px] animate-hero-glow"></div>
         <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-brand-blue/5 rounded-full blur-[100px] animate-pulse"></div>
         <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-brand-purple/5 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
-        
+
         {/* Grid Pattern Overlay */}
         <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
 
@@ -104,9 +104,49 @@ export default function LandingPage() {
           </p>
 
           {/* Additional Details */}
-          <p className="max-w-2xl mx-auto text-brand-text-secondary/80 text-xs sm:text-sm md:text-base mb-8 sm:mb-12 animate-fade-in px-4 sm:px-0" style={{ animationDelay: '0.25s' }}>
+          <p className="max-w-2xl mx-auto text-brand-text-secondary/80 text-xs sm:text-sm md:text-base mb-8 sm:mb-10 animate-fade-in px-4 sm:px-0" style={{ animationDelay: '0.25s' }}>
             Join over 1,000,000+ active traders worldwide. Trade 100+ instruments across Forex, Crypto, Stocks, Indices, and Commodities with leverage up to 1:1000.
           </p>
+
+          {/* Premium Trustpilot Rating */}
+          <div className="flex flex-col items-center justify-center mb-12 animate-fade-in" style={{ animationDelay: '0.28s' }}>
+            <div className="flex items-center space-x-1.5 mb-4 group cursor-default">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-[#00b67a] p-1.5 rounded-sm shadow-[0_0_15px_rgba(0,182,122,0.3)] group-hover:scale-110 group-hover:rotate-12 transition-all duration-300"
+                  style={{ transitionDelay: `${i * 50}ms` }}
+                >
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white fill-current" viewBox="0 0 20 20">
+                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                  </svg>
+                </div>
+              ))}
+            </div>
+            <a
+              href="https://www.trustpilot.com/review/www.investlyin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative flex items-center space-x-3 px-8 py-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 rounded-full transition-all duration-300 backdrop-blur-xl hover:border-brand-gold/30 hover:shadow-[0_0_30px_rgba(255,184,0,0.1)]"
+            >
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-[#00b67a] animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4-6.2-4.5h7.6z" />
+                </svg>
+                <span className="text-sm font-black uppercase tracking-widest text-white/90">Trustpilot</span>
+              </div>
+              <div className="h-4 w-[1px] bg-white/20"></div>
+              <div className="flex flex-col items-start">
+                <span className="text-[10px] font-black text-brand-gold leading-none mb-0.5">EXCELLENT</span>
+                <span className="text-[9px] font-bold text-brand-text-secondary/70 group-hover:text-white transition-colors">4.8/5 Verified Rating</span>
+              </div>
+
+              {/* Subtle light streak animation */}
+              <div className="absolute inset-0 overflow-hidden rounded-full font-black">
+                <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
+              </div>
+            </a>
+          </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4 md:space-x-6 mb-10 sm:mb-12 md:mb-16 animate-fade-in px-4 sm:px-0" style={{ animationDelay: '0.3s' }}>
@@ -183,7 +223,7 @@ export default function LandingPage() {
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-gold/5 rounded-full blur-[120px]"></div>
-        
+
         <div className="content-container relative z-10">
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
@@ -253,7 +293,7 @@ export default function LandingPage() {
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
         <div className="absolute top-1/2 left-0 w-96 h-96 bg-brand-gold/5 rounded-full blur-[120px]"></div>
-        
+
         <div className="content-container relative z-10">
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
@@ -319,15 +359,15 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto">
             <div className="glass-card p-12 rounded-3xl border border-white/5 mb-8">
               <p className="text-brand-text-secondary text-lg leading-relaxed font-medium mb-6">
-                Investlyin is a leading global trading platform designed to bridge the gap between retail traders and institutional-grade execution. 
+                Investlyin is a leading global trading platform designed to bridge the gap between retail traders and institutional-grade execution.
                 We combine cutting-edge technology with deep market liquidity to deliver an unparalleled trading experience.
               </p>
               <p className="text-brand-text-secondary text-lg leading-relaxed font-medium mb-6">
-                Our mission is to democratize access to professional trading tools and market access. Whether you're a seasoned professional 
+                Our mission is to democratize access to professional trading tools and market access. Whether you're a seasoned professional
                 or just starting your trading journey, Investlyin provides the infrastructure, security, and support you need to succeed.
               </p>
               <p className="text-brand-text-secondary text-lg leading-relaxed font-medium">
-                With over 1,000,000 active traders worldwide, we've built a platform that scales from individual retail accounts to 
+                With over 1,000,000 active traders worldwide, we've built a platform that scales from individual retail accounts to
                 institutional partnerships, all while maintaining the highest standards of security and regulatory compliance.
               </p>
             </div>
@@ -1121,20 +1161,115 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Footer */}
-      <section className="py-32 border-t border-white/5 bg-brand-obsidian">
-        <div className="content-container text-center">
-          <div className="glass-panel p-16 rounded-[40px] border border-brand-gold/10">
-            <h2 className="text-5xl font-black tracking-tight mb-8">Ready to Elevate <br />Your Trading?</h2>
-            <p className="text-brand-text-secondary text-lg mb-12 max-w-xl mx-auto font-medium">
+      <section className="py-32 border-t border-white/5 bg-brand-obsidian relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-gold/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="content-container relative z-10">
+          <div className="glass-panel p-10 md:p-20 rounded-[40px] border border-brand-gold/10 text-center relative overflow-hidden group">
+            {/* Subtle animated border gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-gold/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+
+            <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-8">Ready to Elevate <br />Your Trading?</h2>
+            <p className="text-brand-text-secondary text-lg mb-12 max-w-xl mx-auto font-medium leading-relaxed">
               Join 1,000,000+ traders who trust Investlyin for their clinical execution and institutional depth.
             </p>
             <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-6">
-              <Link href="/register" className="w-64 py-5 bg-brand-gold text-brand-obsidian font-black uppercase tracking-[0.3em] text-sm rounded-xl">Create Account</Link>
+              <Link href="/register" className="group relative w-full md:w-72 py-5 bg-brand-gold text-brand-obsidian font-black uppercase tracking-[0.3em] text-sm rounded-xl overflow-hidden transition-all hover:shadow-[0_0_40px_rgba(255,184,0,0.4)]">
+                <span className="relative z-10">Create Account</span>
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+              </Link>
             </div>
           </div>
-          <div className="mt-20 flex flex-col items-center">
-            <div className="text-sm font-black italic tracking-tighter text-brand-text-secondary opacity-50 mb-4"><span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span></div>
-            <p className="text-[10px] text-brand-text-secondary uppercase tracking-[0.2em]">© 2026 Investlyin. All Rights Reserved.</p>
+
+          <div className="mt-24 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 pb-16 border-b border-white/5">
+            <div className="space-y-6">
+              <div className="text-xl font-black italic tracking-tighter"><span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span></div>
+              <p className="text-brand-text-secondary text-sm leading-relaxed font-medium">
+                The world's leading multi-asset platform for professional traders. Built for performance, speed, and precision.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-widest text-white mb-6">Trading</h4>
+              <ul className="space-y-4 text-sm text-brand-text-secondary font-medium">
+                <li><Link href="#forex" className="hover:text-brand-gold transition-colors">Forex</Link></li>
+                <li><Link href="#crypto" className="hover:text-brand-gold transition-colors">Cryptocurrencies</Link></li>
+                <li><Link href="#markets" className="hover:text-brand-gold transition-colors">Commodities</Link></li>
+                <li><Link href="#indices" className="hover:text-brand-gold transition-colors">Indices</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-widest text-white mb-6">Platform</h4>
+              <ul className="space-y-4 text-sm text-brand-text-secondary font-medium">
+                <li><Link href="#features" className="hover:text-brand-gold transition-colors">Terminals</Link></li>
+                <li><Link href="#verification" className="hover:text-brand-gold transition-colors">Security</Link></li>
+                <li><Link href="/login" className="hover:text-brand-gold transition-colors">Institutional</Link></li>
+                <li><Link href="/register" className="hover:text-brand-gold transition-colors">Partnerships</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-widest text-white mb-6">Support</h4>
+              <ul className="space-y-4 text-sm text-brand-text-secondary font-medium">
+                <li><Link href="#faq" className="hover:text-brand-gold transition-colors">Help Center</Link></li>
+                <li><Link href="#" className="hover:text-brand-gold transition-colors">Contact Us</Link></li>
+                <li><Link href="#" className="hover:text-brand-gold transition-colors">API Documentation</Link></li>
+                <li><Link href="#" className="hover:text-brand-gold transition-colors">System Status</Link></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="py-20 animate-fade-in" style={{ animationDelay: '1.4s' }}>
+            {/* Premium Regulatory Disclosure Box */}
+            <div className="relative group overflow-hidden rounded-[32px]">
+              <div className="absolute -inset-1.5 bg-gradient-to-r from-brand-gold/10 via-transparent to-brand-gold/10 rounded-[32px] blur-2xl opacity-40 group-hover:opacity-75 transition-all duration-700"></div>
+              <div className="relative glass-panel rounded-[32px] p-10 border border-white/5 shadow-2xl backdrop-blur-3xl overflow-hidden hover:border-brand-gold/20 transition-all duration-500">
+                <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-700">
+                  <svg className="w-24 h-24 text-brand-gold scale-125" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                  </svg>
+                </div>
+
+                <div className="flex flex-col md:flex-row items-center gap-10">
+                  <div className="flex-shrink-0 relative">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-gold/20 to-brand-gold/5 border border-brand-gold/30 flex items-center justify-center shadow-[0_0_20px_rgba(255,184,0,0.1)] group-hover:scale-110 transition-transform duration-500">
+                      <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="flex-grow text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start space-x-3 mb-3">
+                      <div className="w-8 h-[1px] bg-brand-gold/40"></div>
+                      <h5 className="text-[10px] font-black tracking-[0.3em] text-brand-gold uppercase">Institutional Protection Protocol</h5>
+                    </div>
+                    <h4 className="text-white text-xl font-black mb-3 tracking-tight">Regulatory Compliance & Transparency</h4>
+                    <p className="text-sm text-brand-text-secondary leading-relaxed max-w-2xl font-medium">
+                      Investlyin Ltd is professionally regulated by the <span className="text-white font-black hover:text-brand-gold transition-colors cursor-help underline decoration-brand-gold/30 underline-offset-4">Cyprus Securities and Exchange Commission (CySEC)</span> under License No. <span className="text-white font-black">9564562</span>.
+                    </p>
+                    <p className="text-xs text-brand-text-secondary/70 mt-4 leading-relaxed max-w-xl">
+                      As a Tier-1 financial provider, we strictly adhere to a <span className="text-white/90 font-semibold">"Segregated Client Funds Policy"</span>, ensuring your assets are managed by major European banking institutions and remain independent from company liquidity.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:border-white/20 transition-all cursor-default">CySEC Verified</div>
+                    <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-white/60 hover:text-white hover:border-white/20 transition-all cursor-default">Compliant</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-6">
+              <p className="text-[10px] text-brand-text-secondary uppercase tracking-[0.2em] font-medium">
+                © 2026 Investlyin. All Rights Reserved. Institutional Grade Trading.
+              </p>
+              <div className="flex items-center space-x-8 text-[10px] text-brand-text-secondary uppercase tracking-widest font-black">
+                <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
+                <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
+                <Link href="#" className="hover:text-white transition-colors">Risk Warning</Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>

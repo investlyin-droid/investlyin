@@ -20,12 +20,12 @@ export default function AdminPage() {
     const [activeTab, setActiveTab] = useState<'overview' | 'stats' | 'trades' | 'users' | 'deposits' | 'withdrawals' | 'audit' | 'rules' | 'payment' | 'orders'>('overview');
     const [dataLoading, setDataLoading] = useState(false);
     const [dataError, setDataError] = useState<string | null>(null);
-    
+
     // Pagination states
     const [tradesPagination, setTradesPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
     const [usersPagination, setUsersPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
     const [ordersPagination, setOrdersPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
-    
+
     // Sorting states
     const [tradesSort, setTradesSort] = useState({ sortBy: 'createdAt', sortOrder: 'desc' as 'asc' | 'desc' });
     const [usersSort, setUsersSort] = useState({ sortBy: 'createdAt', sortOrder: 'desc' as 'asc' | 'desc' });
@@ -102,6 +102,8 @@ export default function AdminPage() {
     const [selectedUserToReset2FA, setSelectedUserToReset2FA] = useState<string | null>(null);
     const [showDisable2FAModal, setShowDisable2FAModal] = useState(false);
     const [showReset2FAModal, setShowReset2FAModal] = useState(false);
+    // KYC update loading guard — holds the userId currently being updated
+    const [kycUpdatingUserId, setKycUpdatingUserId] = useState<string | null>(null);
     const { prices } = useMarketSocket();
     const tradeSocketRef = useRef<Socket | null>(null);
     const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -157,8 +159,9 @@ export default function AdminPage() {
         dateFrom: '',
         dateTo: '',
     });
-    
+
     const [userSearch, setUserSearch] = useState('');
+    const [kycStatusFilter, setKycStatusFilter] = useState('all');
     const [orderFilters, setOrderFilters] = useState({
         status: '',
         symbol: '',
@@ -243,7 +246,7 @@ export default function AdminPage() {
             } else {
                 setTrades(Array.isArray(tradesData) ? tradesData : []);
             }
-            
+
             if (usersData && typeof usersData === 'object' && 'data' in usersData) {
                 setUsers(Array.isArray(usersData.data) ? usersData.data : []);
                 setUsersPagination({
@@ -255,7 +258,7 @@ export default function AdminPage() {
             } else {
                 setUsers(Array.isArray(usersData) ? usersData : []);
             }
-            
+
             setOverview(overviewData && typeof overviewData === 'object' ? overviewData : null);
             const rulesArray = Array.isArray(rulesData) ? rulesData : [];
             setLiquidityRules(rulesArray);
@@ -311,7 +314,7 @@ export default function AdminPage() {
     useEffect(() => {
         if (token && user && (user.role === 'admin' || user.role === 'super_admin')) {
             loadData();
-            
+
             // Set up auto-refresh every 5 seconds for real-time updates
             refreshIntervalRef.current = setInterval(() => {
                 // Use refs to avoid stale closures
@@ -322,7 +325,7 @@ export default function AdminPage() {
                 if (activeTab === 'orders' && loadAllOrdersRef.current) loadAllOrdersRef.current();
             }, 5000);
         }
-        
+
         return () => {
             if (refreshIntervalRef.current) {
                 clearInterval(refreshIntervalRef.current);
@@ -409,7 +412,7 @@ export default function AdminPage() {
             if (orderFilters.status) queryParams.append('status', orderFilters.status);
             if (orderFilters.symbol) queryParams.append('symbol', orderFilters.symbol);
             if (orderFilters.orderType) queryParams.append('orderType', orderFilters.orderType);
-            
+
             const data = await api.get(`/admin/orders?${queryParams.toString()}`, token);
             if (data && typeof data === 'object' && 'data' in data) {
                 setAllOrders(Array.isArray(data.data) ? data.data : []);
@@ -565,10 +568,10 @@ export default function AdminPage() {
     const tradeStats = useMemo(() => {
         const openTrades = trades.filter(t => t.status === 'OPEN');
         const closedTrades = trades.filter(t => t.status === 'CLOSED');
-        
+
         // Calculate closed P/L
         const closedPnL = closedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-        
+
         // Calculate real-time floating P/L for open trades
         const floatingPnL = openTrades.reduce((sum, t) => {
             if (!Array.isArray(prices) || prices.length === 0) {
@@ -584,10 +587,10 @@ export default function AdminPage() {
                 : (t.openPrice - cmp) * t.lotSize * contractSize;
             return sum + (pnl || 0);
         }, 0);
-        
+
         // Total P/L = closed P/L + floating P/L
         const totalPnL = closedPnL + floatingPnL;
-        
+
         const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
         const winRate = closedTrades.length > 0 ? (winningTrades / closedTrades.length) * 100 : 0;
         const activeTrades = trades.filter(t => t.isActive !== false).length;
@@ -618,7 +621,7 @@ export default function AdminPage() {
                 const searchLower = tradeFilters.search.toLowerCase();
                 const userInfo = users.find(u => u._id === trade.userId);
                 const userSearch = userInfo ? `${userInfo.firstName} ${userInfo.lastName} ${userInfo.email}`.toLowerCase() : '';
-                if (!trade._id.toLowerCase().includes(searchLower) && 
+                if (!trade._id.toLowerCase().includes(searchLower) &&
                     !trade.symbol.toLowerCase().includes(searchLower) &&
                     !userSearch.includes(searchLower)) return false;
             }
@@ -899,12 +902,22 @@ export default function AdminPage() {
     };
 
     const setUserKycStatus = async (userId: string, kycStatus: string) => {
+        // 'not_submitted' is UI-only; the backend enum only accepts: pending | approved | rejected
+        if (!kycStatus || kycStatus === 'not_submitted') {
+            toast.error('Please choose a valid KYC status: Pending, Approved, or Rejected.');
+            return;
+        }
+        // Prevent duplicate submissions while a request is in-flight for this user
+        if (kycUpdatingUserId === userId) return;
+        setKycUpdatingUserId(userId);
         try {
             await api.put(`/admin/users/${userId}/kyc-status`, { kycStatus }, token!);
             await loadData();
-            toast.success('KYC status updated.');
+            toast.success(`KYC status set to "${kycStatus}" successfully.`);
         } catch (error: any) {
             toast.error(error.message || 'Failed to update KYC status.');
+        } finally {
+            setKycUpdatingUserId(null);
         }
     };
 
@@ -1167,9 +1180,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('overview')}
-                            className={`pb-1 border-b-2 transition-colors ${
-                                activeTab === 'overview' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors ${activeTab === 'overview' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-overview"
                         >
                             Overview
@@ -1177,9 +1189,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('stats')}
-                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === 'stats' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'stats' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-stats"
                         >
                             Statistics
@@ -1187,9 +1198,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('trades')}
-                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === 'trades' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'trades' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-trades"
                         >
                             Trade Management
@@ -1197,9 +1207,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('users')}
-                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === 'users' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'users' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-users"
                         >
                             User Accounts
@@ -1207,9 +1216,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('deposits')}
-                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === 'deposits' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'deposits' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-deposits"
                         >
                             Deposits
@@ -1217,9 +1225,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('withdrawals')}
-                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === 'withdrawals' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'withdrawals' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-withdrawals"
                         >
                             Withdrawals
@@ -1227,9 +1234,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('audit')}
-                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === 'audit' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'audit' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-audit"
                         >
                             Audit Log
@@ -1237,9 +1243,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('rules')}
-                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === 'rules' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'rules' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-rules"
                         >
                             Liquidity Rules
@@ -1247,9 +1252,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('payment')}
-                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === 'payment' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'payment' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-payment"
                         >
                             Payment Config
@@ -1257,9 +1261,8 @@ export default function AdminPage() {
                         <button
                             type="button"
                             onClick={() => setActiveTab('orders')}
-                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${
-                                activeTab === 'orders' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
-                            }`}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'orders' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
                             data-testid="admin-tab-orders"
                         >
                             Orders
@@ -1286,7 +1289,7 @@ export default function AdminPage() {
                 {showMobileMenu && (
                     <>
                         {/* Backdrop */}
-                        <div 
+                        <div
                             className="lg:hidden fixed inset-0 bg-black/50 z-20"
                             onClick={() => setShowMobileMenu(false)}
                         />
@@ -1313,11 +1316,10 @@ export default function AdminPage() {
                                             setActiveTab(tab.id as any);
                                             setShowMobileMenu(false);
                                         }}
-                                        className={`px-4 py-3.5 text-left text-sm font-semibold transition-colors border-l-4 min-h-[44px] touch-manipulation ${
-                                            activeTab === tab.id
-                                                ? 'text-brand-gold bg-brand-gold/10 border-brand-gold'
-                                                : 'text-brand-text-secondary active:bg-white/10 border-transparent'
-                                        }`}
+                                        className={`px-4 py-3.5 text-left text-sm font-semibold transition-colors border-l-4 min-h-[44px] touch-manipulation ${activeTab === tab.id
+                                            ? 'text-brand-gold bg-brand-gold/10 border-brand-gold'
+                                            : 'text-brand-text-secondary active:bg-white/10 border-transparent'
+                                            }`}
                                     >
                                         {tab.label}
                                     </button>
@@ -1385,7 +1387,7 @@ export default function AdminPage() {
                                                 {tradeStats.totalPnL >= 0 ? '+' : ''}{tradeStats.totalPnL.toFixed(2)}
                                             </p>
                                             <p className="text-[9px] text-brand-text-secondary mt-1">
-                                                Closed: {tradeStats.closedPnL >= 0 ? '+' : ''}{tradeStats.closedPnL.toFixed(2)} | 
+                                                Closed: {tradeStats.closedPnL >= 0 ? '+' : ''}{tradeStats.closedPnL.toFixed(2)} |
                                                 Floating: {tradeStats.floatingPnL >= 0 ? '+' : ''}{tradeStats.floatingPnL.toFixed(2)}
                                             </p>
                                         </div>
@@ -1460,7 +1462,7 @@ export default function AdminPage() {
                                     <p className="text-xs text-brand-text-secondary mb-2">Trade Status</p>
                                     <p className="text-3xl font-bold">{tradeStats.activeTrades}</p>
                                     <div className="mt-3 text-xs text-brand-text-secondary">
-                                        Active: <span className="text-brand-green">{tradeStats.activeTrades}</span> | 
+                                        Active: <span className="text-brand-green">{tradeStats.activeTrades}</span> |
                                         Inactive: <span className="text-brand-red">{tradeStats.inactiveTrades}</span>
                                     </div>
                                 </div>
@@ -1473,10 +1475,10 @@ export default function AdminPage() {
                                         const symbolTrades = trades.filter(t => t.symbol === symbol);
                                         const symbolClosedTrades = symbolTrades.filter(t => t.status === 'CLOSED');
                                         const symbolOpenTrades = symbolTrades.filter(t => t.status === 'OPEN');
-                                        
+
                                         // Calculate closed P/L
                                         const symbolClosedPnL = symbolClosedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-                                        
+
                                         // Calculate real-time floating P/L for open trades
                                         const symbolFloatingPnL = symbolOpenTrades.reduce((sum, t) => {
                                             if (!Array.isArray(prices) || prices.length === 0) {
@@ -1492,9 +1494,9 @@ export default function AdminPage() {
                                                 : (t.openPrice - cmp) * t.lotSize * contractSize;
                                             return sum + (pnl || 0);
                                         }, 0);
-                                        
+
                                         const symbolPnL = symbolClosedPnL + symbolFloatingPnL;
-                                        
+
                                         return (
                                             <div key={symbol} className="text-center">
                                                 <p className="text-xs text-brand-text-secondary mb-1">{symbol}</p>
@@ -1629,7 +1631,7 @@ export default function AdminPage() {
                                     <table className="w-full trade-table text-xs">
                                         <thead>
                                             <tr className="text-[10px] font-bold text-brand-text-secondary uppercase">
-                                                <th 
+                                                <th
                                                     className="px-4 py-3 text-left cursor-pointer hover:text-white transition-colors"
                                                     onClick={() => {
                                                         const newOrder = tradesSort.sortBy === 'createdAt' && tradesSort.sortOrder === 'desc' ? 'asc' : 'desc';
@@ -1643,7 +1645,7 @@ export default function AdminPage() {
                                                     )}
                                                 </th>
                                                 <th className="px-4 py-3 text-left">User</th>
-                                                <th 
+                                                <th
                                                     className="px-4 py-3 text-left cursor-pointer hover:text-white transition-colors"
                                                     onClick={() => {
                                                         const newOrder = tradesSort.sortBy === 'symbol' && tradesSort.sortOrder === 'desc' ? 'asc' : 'desc';
@@ -1660,7 +1662,7 @@ export default function AdminPage() {
                                                 <th className="px-4 py-3 text-right">Volume</th>
                                                 <th className="px-4 py-3 text-right">Open Price</th>
                                                 <th className="px-4 py-3 text-right">Close Price</th>
-                                                <th 
+                                                <th
                                                     className="px-4 py-3 text-right cursor-pointer hover:text-white transition-colors"
                                                     onClick={() => {
                                                         const newOrder = tradesSort.sortBy === 'pnl' && tradesSort.sortOrder === 'desc' ? 'asc' : 'desc';
@@ -1675,7 +1677,7 @@ export default function AdminPage() {
                                                 </th>
                                                 <th className="px-4 py-3 text-left">Open Time</th>
                                                 <th className="px-4 py-3 text-left">Close Time</th>
-                                                <th 
+                                                <th
                                                     className="px-4 py-3 text-center cursor-pointer hover:text-white transition-colors"
                                                     onClick={() => {
                                                         const newOrder = tradesSort.sortBy === 'status' && tradesSort.sortOrder === 'desc' ? 'asc' : 'desc';
@@ -1699,7 +1701,7 @@ export default function AdminPage() {
                                                 const userInfo = users.find(u => u._id === trade.userId);
                                                 const adminInfo = users.find(u => u._id === trade.adminModifiedBy);
                                                 const adminNote = typeof trade.adminNotes === 'string' ? trade.adminNotes : (trade.adminNotes?.note || '');
-                                                
+
                                                 // Calculate real-time P/L for open trades (per-symbol contract size for accuracy)
                                                 let currentPnL = trade.pnl || 0;
                                                 let currentPrice = trade.closePrice;
@@ -1716,7 +1718,7 @@ export default function AdminPage() {
                                                         }
                                                     }
                                                 }
-                                                
+
                                                 return (
                                                     <tr key={trade._id} className="border-b border-white/5 hover:bg-white/5">
                                                         <td className="px-4 py-3 font-mono text-[10px]">{trade._id.slice(-8)}</td>
@@ -1813,9 +1815,9 @@ export default function AdminPage() {
                                                                         setShowDeleteTradeModal(true);
                                                                     }}
                                                                     className="px-3 py-1.5 bg-brand-red/20 hover:bg-brand-red/30 text-brand-red text-[10px] font-semibold rounded transition-colors"
-                                                                    >
-                                                                        Delete
-                                                                    </button>
+                                                                >
+                                                                    Delete
+                                                                </button>
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -1824,7 +1826,7 @@ export default function AdminPage() {
                                         </tbody>
                                     </table>
                                 </div>
-                                
+
                                 {/* Pagination Controls */}
                                 {tradesPagination.totalPages > 1 && (
                                     <div className="card rounded-lg p-4 mt-4">
@@ -1879,10 +1881,10 @@ export default function AdminPage() {
                                 <h1 className="text-2xl font-bold mb-1">User Accounts</h1>
                                 <p className="text-sm text-brand-text-secondary">Manage user accounts and balances</p>
                             </div>
-                            
-                            {/* Search Bar */}
+
+                            {/* Search Bar + KYC Filter */}
                             <div className="card rounded-lg p-4">
-                                <div className="flex items-center space-x-4">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
                                     <div className="flex-1">
                                         <label className="block text-xs font-semibold text-brand-text-secondary mb-2">Search Users</label>
                                         <input
@@ -1893,35 +1895,58 @@ export default function AdminPage() {
                                             className="w-full input-field rounded-lg px-4 py-2.5 text-sm"
                                         />
                                     </div>
-                                    {userSearch && (
+                                    <div className="min-w-[160px]">
+                                        <label className="block text-xs font-semibold text-brand-text-secondary mb-2">KYC Filter</label>
+                                        <select
+                                            value={kycStatusFilter}
+                                            onChange={e => setKycStatusFilter(e.target.value)}
+                                            className="w-full input-field rounded-lg px-3 py-2.5 text-sm"
+                                        >
+                                            <option value="all">All KYC Statuses</option>
+                                            <option value="not_submitted">Not Submitted</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="approved">Approved</option>
+                                            <option value="rejected">Rejected</option>
+                                        </select>
+                                    </div>
+                                    {(userSearch || kycStatusFilter !== 'all') && (
                                         <div className="flex items-end">
                                             <button
-                                                onClick={() => setUserSearch('')}
-                                                className="px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-semibold transition-colors"
+                                                onClick={() => { setUserSearch(''); setKycStatusFilter('all'); }}
+                                                className="px-4 py-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap"
                                             >
-                                                Clear
+                                                Clear Filters
                                             </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
-                            
+
                             {/* Filtered Users */}
                             {(() => {
                                 const filteredUsers = users.filter((u) => {
-                                    if (!userSearch) return true;
-                                    const searchLower = userSearch.toLowerCase();
-                                    const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
-                                    const email = (u.email || '').toLowerCase();
-                                    const role = (u.role || '').toLowerCase();
-                                    const userId = (u._id || '').toLowerCase();
-                                    
-                                    return fullName.includes(searchLower) ||
-                                           email.includes(searchLower) ||
-                                           role.includes(searchLower) ||
-                                           userId.includes(searchLower);
+                                    let matchesSearch = true;
+                                    if (userSearch) {
+                                        const searchLower = userSearch.toLowerCase();
+                                        const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+                                        const email = (u.email || '').toLowerCase();
+                                        const role = (u.role || '').toLowerCase();
+                                        const userId = (u._id || '').toLowerCase();
+
+                                        matchesSearch = fullName.includes(searchLower) ||
+                                            email.includes(searchLower) ||
+                                            role.includes(searchLower) ||
+                                            userId.includes(searchLower);
+                                    }
+
+                                    let matchesKYC = true;
+                                    if (kycStatusFilter !== 'all') {
+                                        matchesKYC = (u.kycStatus || 'not_submitted') === kycStatusFilter;
+                                    }
+
+                                    return matchesSearch && matchesKYC;
                                 });
-                                
+
                                 return (
                                     <div key="filtered-users-container">
                                         {filteredUsers.length > 0 && (
@@ -1938,200 +1963,231 @@ export default function AdminPage() {
                                         {filteredUsers.length > 0 && (
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 {filteredUsers.map((u) => {
-                                    const userTrades = trades.filter(t => t.userId === u._id);
-                                    const userOpenTrades = userTrades.filter(t => t.status === 'OPEN');
-                                    
-                                    // Calculate closed trades P/L
-                                    const userClosedPnL = userTrades
-                                        .filter(t => t.status === 'CLOSED')
-                                        .reduce((sum, t) => sum + (t.pnl || 0), 0);
-                                    
-                                    // Real-time equity = balance + floating P/L
-                                    const realTimeEquity = calculateUserEquity(u.wallet?.balance || 0, userOpenTrades);
-                                    
-                                    // Calculate floating P/L for color coding
-                                    const userFloatingPnL = realTimeEquity - (u.wallet?.balance || 0);
-                                    
-                                    // Total P/L = closed P/L + floating P/L
-                                    const userPnL = userClosedPnL + userFloatingPnL;
-                                    
-                                    return (
-                                        <div key={u._id} className="card rounded-lg p-5">
-                                            <div className="flex items-start justify-between mb-4">
-                                                <div>
-                                                    <h3 className="font-bold text-lg">{u.firstName} {u.lastName}</h3>
-                                                    <p className="text-xs text-brand-text-secondary">{u.email}</p>
-                                                </div>
-                                                <span className="badge badge-info">{u.role}</span>
-                                            </div>
-                                            <div className="space-y-3 mb-4">
-                                                <div>
-                                                    <p className="text-xs text-brand-text-secondary mb-1">Balance</p>
-                                                    <p className={`text-xl font-bold ${
-                                                        userFloatingPnL !== 0 
-                                                            ? (userFloatingPnL > 0 ? 'text-brand-green' : 'text-brand-red')
-                                                            : 'text-brand-green'
-                                                    }`}>
-                                                        ${realTimeEquity.toFixed(2)}
-                                                    </p>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3 text-xs">
-                                                    <div>
-                                                        <p className="text-brand-text-secondary">Total Trades</p>
-                                                        <p className="font-bold">{userTrades.length}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-brand-text-secondary">Total P/L</p>
-                                                        <p className={`font-bold ${userPnL >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
-                                                            {userPnL >= 0 ? '+' : ''}{userPnL.toFixed(2)}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3 text-xs">
-                                                    <div>
-                                                        <p className="text-brand-text-secondary">KYC Status</p>
-                                                        <span className={`badge ${u.kycStatus === 'approved' ? 'badge-success' : u.kycStatus === 'rejected' ? 'badge-danger' : 'badge-info'}`}>
-                                                            {u.kycStatus || 'not_submitted'}
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-brand-text-secondary">Account Status</p>
-                                                        <span className={`badge ${u.isActive ? 'badge-success' : 'badge-danger'}`}>
-                                                            {u.isActive ? 'Active' : 'Inactive'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                {u.kycDocumentUrl && (
-                                                    <div className="mt-3 p-3 rounded-lg bg-white/5 border border-white/10">
-                                                        <p className="text-xs text-brand-text-secondary mb-2">KYC Document</p>
-                                                        <div className="flex items-center gap-2">
-                                                            {u.kycDocumentType && (
-                                                                <span className="text-xs text-brand-text-secondary">Type: {u.kycDocumentType.replace('_', ' ')}</span>
-                                                            )}
-                                                            {u.kycDocumentNumber && (
-                                                                <span className="text-xs text-brand-text-secondary">No: {u.kycDocumentNumber}</span>
-                                                            )}
+                                                    const userTrades = trades.filter(t => t.userId === u._id);
+                                                    const userOpenTrades = userTrades.filter(t => t.status === 'OPEN');
+
+                                                    // Calculate closed trades P/L
+                                                    const userClosedPnL = userTrades
+                                                        .filter(t => t.status === 'CLOSED')
+                                                        .reduce((sum, t) => sum + (t.pnl || 0), 0);
+
+                                                    // Real-time equity = balance + floating P/L
+                                                    const realTimeEquity = calculateUserEquity(u.wallet?.balance || 0, userOpenTrades);
+
+                                                    // Calculate floating P/L for color coding
+                                                    const userFloatingPnL = realTimeEquity - (u.wallet?.balance || 0);
+
+                                                    // Total P/L = closed P/L + floating P/L
+                                                    const userPnL = userClosedPnL + userFloatingPnL;
+
+                                                    return (
+                                                        <div key={u._id} className="card rounded-lg p-5">
+                                                            <div className="flex items-start justify-between mb-4">
+                                                                <div>
+                                                                    <h3 className="font-bold text-lg">{u.firstName} {u.lastName}</h3>
+                                                                    <p className="text-xs text-brand-text-secondary">{u.email}</p>
+                                                                </div>
+                                                                <span className="badge badge-info">{u.role}</span>
+                                                            </div>
+                                                            <div className="space-y-3 mb-4">
+                                                                <div>
+                                                                    <p className="text-xs text-brand-text-secondary mb-1">Balance</p>
+                                                                    <p className={`text-xl font-bold ${userFloatingPnL !== 0
+                                                                        ? (userFloatingPnL > 0 ? 'text-brand-green' : 'text-brand-red')
+                                                                        : 'text-brand-green'
+                                                                        }`}>
+                                                                        ${realTimeEquity.toFixed(2)}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="grid grid-cols-2 gap-3 text-xs">
+                                                                    <div>
+                                                                        <p className="text-brand-text-secondary">Total Trades</p>
+                                                                        <p className="font-bold">{userTrades.length}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-brand-text-secondary">Total P/L</p>
+                                                                        <p className={`font-bold ${userPnL >= 0 ? 'text-brand-green' : 'text-brand-red'}`}>
+                                                                            {userPnL >= 0 ? '+' : ''}{userPnL.toFixed(2)}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="grid grid-cols-2 gap-3 text-xs">
+                                                                    <div>
+                                                                        <p className="text-brand-text-secondary">KYC Status</p>
+                                                                        <span className={`badge ${u.kycStatus === 'approved' ? 'badge-success' : u.kycStatus === 'rejected' ? 'badge-danger' : 'badge-info'}`}>
+                                                                            {u.kycStatus || 'not_submitted'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-brand-text-secondary">Account Status</p>
+                                                                        <span className={`badge ${u.isActive ? 'badge-success' : 'badge-danger'}`}>
+                                                                            {u.isActive ? 'Active' : 'Inactive'}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                {u.kycDocumentUrl && (
+                                                                    <div className="mt-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                                                                        <p className="text-xs text-brand-text-secondary mb-2">KYC Document</p>
+                                                                        <div className="flex items-center gap-2">
+                                                                            {u.kycDocumentType && (
+                                                                                <span className="text-xs text-brand-text-secondary">Type: {u.kycDocumentType.replace('_', ' ')}</span>
+                                                                            )}
+                                                                            {u.kycDocumentNumber && (
+                                                                                <span className="text-xs text-brand-text-secondary">No: {u.kycDocumentNumber}</span>
+                                                                            )}
+                                                                        </div>
+                                                                        <a
+                                                                            href={u.kycDocumentUrl.startsWith('http') ? u.kycDocumentUrl : `${API_URL}${u.kycDocumentUrl}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="mt-2 inline-block text-xs text-brand-gold hover:underline font-semibold"
+                                                                        >
+                                                                            {u.kycDocumentUrl.toLowerCase().endsWith('.pdf') ? 'View PDF Document' : 'View Document Image'}
+                                                                        </a>
+                                                                    </div>
+                                                                )}
+                                                                {u.createdAt && (
+                                                                    <div className="text-xs text-brand-text-secondary">
+                                                                        Registered: {new Date(u.createdAt).toLocaleDateString()}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex flex-col gap-2">
+                                                                <div className="flex gap-2">
+                                                                    <button
+                                                                        onClick={() => setUserStatus(u._id, !u.isActive)}
+                                                                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${u.isActive ? 'bg-brand-red/10 border border-brand-red/20 hover:bg-brand-red/20 text-brand-red' : 'bg-brand-green/10 border border-brand-green/20 hover:bg-brand-green/20 text-brand-green'}`}
+                                                                    >
+                                                                        {u.isActive ? 'Suspend' : 'Activate'}
+                                                                    </button>
+                                                                    <div className="flex-1 relative">
+                                                                        <select
+                                                                            value={u.kycStatus || 'not_submitted'}
+                                                                            disabled={kycUpdatingUserId === u._id}
+                                                                            onChange={(e) => setUserKycStatus(u._id, e.target.value)}
+                                                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-[10px] font-bold uppercase tracking-wider focus:border-brand-gold outline-none transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            {/* not_submitted is display-only — selecting it is a no-op (guarded in setUserKycStatus) */}
+                                                                            <option value="not_submitted" className="bg-brand-obsidian">Not submitted</option>
+                                                                            <option value="pending" className="bg-brand-obsidian">Pending</option>
+                                                                            <option value="approved" className="bg-brand-obsidian">Approved</option>
+                                                                            <option value="rejected" className="bg-brand-obsidian">Rejected</option>
+                                                                        </select>
+                                                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-white/40">
+                                                                            {kycUpdatingUserId === u._id ? (
+                                                                                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+                                                                            ) : (
+                                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                                                                </svg>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                {u.kycStatus === 'pending' && (
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={() => setUserKycStatus(u._id, 'approved')}
+                                                                            disabled={kycUpdatingUserId === u._id}
+                                                                            className="flex-1 py-1.5 bg-brand-green/10 border border-brand-green/30 hover:bg-brand-green/20 text-brand-green text-[9px] font-black uppercase tracking-[0.15em] rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            {kycUpdatingUserId === u._id ? '...' : 'Approve KYC'}
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setUserKycStatus(u._id, 'rejected')}
+                                                                            disabled={kycUpdatingUserId === u._id}
+                                                                            className="flex-1 py-1.5 bg-brand-red/10 border border-brand-red/30 hover:bg-brand-red/20 text-brand-red text-[9px] font-black uppercase tracking-[0.15em] rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            {kycUpdatingUserId === u._id ? '...' : 'Reject KYC'}
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openUserTransactions(u._id)}
+                                                                    className="w-full py-2 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded transition-colors"
+                                                                >
+                                                                    View transactions
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => openUserOrders(u._id)}
+                                                                    className="w-full py-2 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded transition-colors"
+                                                                >
+                                                                    View Orders
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => openBalanceModal(u._id)}
+                                                                    className="w-full py-2 bg-brand-gold/20 hover:bg-brand-gold/30 text-brand-gold text-xs font-semibold rounded transition-colors"
+                                                                >
+                                                                    Adjust Balance
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedUserToEdit(u);
+                                                                        setEditUserForm({
+                                                                            firstName: u.firstName || '',
+                                                                            lastName: u.lastName || '',
+                                                                            email: u.email || '',
+                                                                            phone: u.phone || '',
+                                                                        });
+                                                                        setShowEditUserModal(true);
+                                                                    }}
+                                                                    className="w-full py-2 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded transition-colors"
+                                                                >
+                                                                    Edit Profile
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedUserToResetPassword(u._id);
+                                                                        setShowResetPasswordModal(true);
+                                                                    }}
+                                                                    className="w-full py-2 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded transition-colors"
+                                                                >
+                                                                    Reset Password
+                                                                </button>
+                                                                {u.twoFactorEnabled && (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setSelectedUserToDisable2FA(u._id);
+                                                                                setShowDisable2FAModal(true);
+                                                                            }}
+                                                                            className="w-full py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 text-xs font-semibold rounded transition-colors"
+                                                                        >
+                                                                            Disable 2FA
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setSelectedUserToReset2FA(u._id);
+                                                                                setShowReset2FAModal(true);
+                                                                            }}
+                                                                            className="w-full py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 text-xs font-semibold rounded transition-colors"
+                                                                        >
+                                                                            Reset 2FA
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedUserToDelete(u._id);
+                                                                        setShowDeleteUserModal(true);
+                                                                    }}
+                                                                    className="w-full py-2 bg-brand-red/20 hover:bg-brand-red/30 text-brand-red text-xs font-semibold rounded transition-colors"
+                                                                >
+                                                                    Delete User
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                        <a 
-                                                            href={u.kycDocumentUrl.startsWith('http') ? u.kycDocumentUrl : `${API_URL}${u.kycDocumentUrl}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="mt-2 inline-block text-xs text-brand-gold hover:underline font-semibold"
-                                                        >
-                                                            {u.kycDocumentUrl.toLowerCase().endsWith('.pdf') ? 'View PDF Document' : 'View Document Image'}
-                                                        </a>
-                                                    </div>
-                                                )}
-                                                {u.createdAt && (
-                                                    <div className="text-xs text-brand-text-secondary">
-                                                        Registered: {new Date(u.createdAt).toLocaleDateString()}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex flex-col gap-2">
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => setUserStatus(u._id, !u.isActive)}
-                                                        className={`flex-1 py-2 text-xs font-semibold rounded transition-colors ${u.isActive ? 'bg-brand-red/20 hover:bg-brand-red/30 text-brand-red' : 'bg-brand-green/20 hover:bg-brand-green/30 text-brand-green'}`}
-                                                    >
-                                                        {u.isActive ? 'Suspend' : 'Activate'}
-                                                    </button>
-                                                    <select
-                                                        value={u.kycStatus || 'not_submitted'}
-                                                        onChange={(e) => setUserKycStatus(u._id, e.target.value)}
-                                                        className="flex-1 input-field rounded px-2 py-2 text-xs"
-                                                    >
-                                                        <option value="not_submitted">Not submitted</option>
-                                                        <option value="pending">Pending</option>
-                                                        <option value="approved">Approved</option>
-                                                        <option value="rejected">Rejected</option>
-                                                    </select>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openUserTransactions(u._id)}
-                                                    className="w-full py-2 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded transition-colors"
-                                                >
-                                                    View transactions
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openUserOrders(u._id)}
-                                                    className="w-full py-2 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded transition-colors"
-                                                >
-                                                    View Orders
-                                                </button>
-                                                <button
-                                                    onClick={() => openBalanceModal(u._id)}
-                                                    className="w-full py-2 bg-brand-gold/20 hover:bg-brand-gold/30 text-brand-gold text-xs font-semibold rounded transition-colors"
-                                                >
-                                                    Adjust Balance
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedUserToEdit(u);
-                                                        setEditUserForm({
-                                                            firstName: u.firstName || '',
-                                                            lastName: u.lastName || '',
-                                                            email: u.email || '',
-                                                            phone: u.phone || '',
-                                                        });
-                                                        setShowEditUserModal(true);
-                                                    }}
-                                                    className="w-full py-2 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded transition-colors"
-                                                >
-                                                    Edit Profile
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedUserToResetPassword(u._id);
-                                                        setShowResetPasswordModal(true);
-                                                    }}
-                                                    className="w-full py-2 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded transition-colors"
-                                                >
-                                                    Reset Password
-                                                </button>
-                                                {u.twoFactorEnabled && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedUserToDisable2FA(u._id);
-                                                                setShowDisable2FAModal(true);
-                                                            }}
-                                                            className="w-full py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 text-xs font-semibold rounded transition-colors"
-                                                        >
-                                                            Disable 2FA
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedUserToReset2FA(u._id);
-                                                                setShowReset2FAModal(true);
-                                                            }}
-                                                            className="w-full py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 text-xs font-semibold rounded transition-colors"
-                                                        >
-                                                            Reset 2FA
-                                                        </button>
-                                                    </>
-                                                )}
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedUserToDelete(u._id);
-                                                        setShowDeleteUserModal(true);
-                                                    }}
-                                                    className="w-full py-2 bg-brand-red/20 hover:bg-brand-red/30 text-brand-red text-xs font-semibold rounded transition-colors"
-                                                >
-                                                    Delete User
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
+                                                    );
                                                 })}
                                             </div>
-                                        )}
+                                        )
+                                        }
                                     </div>
                                 );
                             })()}
-                            
+
                             {/* Pagination Controls for Users */}
                             {usersPagination.totalPages > 1 && (
                                 <div className="card rounded-lg p-4 mt-4">
@@ -2176,7 +2232,8 @@ export default function AdminPage() {
                                 </div>
                             )}
                         </div>
-                    )}
+                    )
+                    }
 
                     {/* Withdrawals Tab */}
                     {activeTab === 'withdrawals' && (
@@ -2344,57 +2401,58 @@ export default function AdminPage() {
                                             {depositIntents.map((d: any) => {
                                                 const screenshotUrl = d.paymentScreenshotUrl?.startsWith('http') ? d.paymentScreenshotUrl : d.paymentScreenshotUrl ? `${API_URL}${d.paymentScreenshotUrl}` : null;
                                                 return (
-                                                <tr key={d._id} className="border-b border-white/5 hover:bg-white/5">
-                                                    <td className="px-4 py-3">
-                                                        <div>
-                                                            <p className="font-semibold">{d.userName || d.userEmail || '-'}</p>
-                                                            <p className="text-[10px] text-brand-text-secondary">{d.userEmail || d.userId}</p>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3">{d.method || '-'}</td>
-                                                    <td className="px-4 py-3 text-right font-mono">${(d.amount ?? 0).toFixed(2)} {d.currency || ''}</td>
-                                                    <td className="px-4 py-3 font-mono text-[10px]">{d.reference || '-'}</td>
-                                                    <td className="px-4 py-3 text-center">
-                                                        {screenshotUrl ? (
-                                                            <a href={screenshotUrl} target="_blank" rel="noopener noreferrer" className="inline-block">
-                                                                {screenshotUrl.toLowerCase().endsWith('.pdf') ? (
-                                                                    <span className="text-brand-gold text-[10px] font-semibold">View PDF</span>
-                                                                ) : (
-                                                                    <img src={screenshotUrl} alt="Payment" className="w-12 h-12 object-cover rounded border border-white/10" />
-                                                                )}
-                                                            </a>
-                                                        ) : (
-                                                            <span className="text-brand-text-secondary text-[10px]">—</span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-center">
-                                                        <span className={`badge ${d.status === 'PENDING' ? 'badge-info' : d.status === 'SUBMITTED' ? 'badge-warning' : d.status === 'COMPLETED' ? 'badge-success' : 'badge-danger'}`}>
-                                                            {d.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-[10px]">{d.createdAt ? new Date(d.createdAt).toLocaleString() : '-'}</td>
-                                                    <td className="px-4 py-3 text-center">
-                                                        {(d.status === 'PENDING' || d.status === 'SUBMITTED') && (
-                                                            <div className="flex items-center justify-center gap-2">
-                                                                <button
-                                                                    onClick={() => confirmDeposit(d.reference)}
-                                                                    disabled={confirmingRef === d.reference}
-                                                                    className="px-3 py-1.5 bg-brand-green/20 hover:bg-brand-green/30 text-brand-green text-[10px] font-semibold rounded disabled:opacity-50"
-                                                                >
-                                                                    {confirmingRef === d.reference ? '…' : 'Confirm'}
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => rejectDeposit(d.reference)}
-                                                                    disabled={rejectingRef === d.reference}
-                                                                    className="px-3 py-1.5 bg-brand-red/20 hover:bg-brand-red/30 text-brand-red text-[10px] font-semibold rounded disabled:opacity-50"
-                                                                >
-                                                                    {rejectingRef === d.reference ? '…' : 'Reject'}
-                                                                </button>
+                                                    <tr key={d._id} className="border-b border-white/5 hover:bg-white/5">
+                                                        <td className="px-4 py-3">
+                                                            <div>
+                                                                <p className="font-semibold">{d.userName || d.userEmail || '-'}</p>
+                                                                <p className="text-[10px] text-brand-text-secondary">{d.userEmail || d.userId}</p>
                                                             </div>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            );})}
+                                                        </td>
+                                                        <td className="px-4 py-3">{d.method || '-'}</td>
+                                                        <td className="px-4 py-3 text-right font-mono">${(d.amount ?? 0).toFixed(2)} {d.currency || ''}</td>
+                                                        <td className="px-4 py-3 font-mono text-[10px]">{d.reference || '-'}</td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            {screenshotUrl ? (
+                                                                <a href={screenshotUrl} target="_blank" rel="noopener noreferrer" className="inline-block">
+                                                                    {screenshotUrl.toLowerCase().endsWith('.pdf') ? (
+                                                                        <span className="text-brand-gold text-[10px] font-semibold">View PDF</span>
+                                                                    ) : (
+                                                                        <img src={screenshotUrl} alt="Payment" className="w-12 h-12 object-cover rounded border border-white/10" />
+                                                                    )}
+                                                                </a>
+                                                            ) : (
+                                                                <span className="text-brand-text-secondary text-[10px]">—</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <span className={`badge ${d.status === 'PENDING' ? 'badge-info' : d.status === 'SUBMITTED' ? 'badge-warning' : d.status === 'COMPLETED' ? 'badge-success' : 'badge-danger'}`}>
+                                                                {d.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-[10px]">{d.createdAt ? new Date(d.createdAt).toLocaleString() : '-'}</td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            {(d.status === 'PENDING' || d.status === 'SUBMITTED') && (
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <button
+                                                                        onClick={() => confirmDeposit(d.reference)}
+                                                                        disabled={confirmingRef === d.reference}
+                                                                        className="px-3 py-1.5 bg-brand-green/20 hover:bg-brand-green/30 text-brand-green text-[10px] font-semibold rounded disabled:opacity-50"
+                                                                    >
+                                                                        {confirmingRef === d.reference ? '…' : 'Confirm'}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => rejectDeposit(d.reference)}
+                                                                        disabled={rejectingRef === d.reference}
+                                                                        className="px-3 py-1.5 bg-brand-red/20 hover:bg-brand-red/30 text-brand-red text-[10px] font-semibold rounded disabled:opacity-50"
+                                                                    >
+                                                                        {rejectingRef === d.reference ? '…' : 'Reject'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -2460,9 +2518,9 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-4">
                                     <select
                                         value={selectedSymbol}
-                                        onChange={(e) => { 
-                                            setSelectedSymbol(e.target.value); 
-                                            loadData(); 
+                                        onChange={(e) => {
+                                            setSelectedSymbol(e.target.value);
+                                            loadData();
                                         }}
                                         className="input-field rounded-lg px-4 py-2 text-sm font-semibold"
                                     >
@@ -2470,8 +2528,8 @@ export default function AdminPage() {
                                             <option key={s} value={s}>{s}</option>
                                         ))}
                                     </select>
-                                    <button 
-                                        onClick={loadData} 
+                                    <button
+                                        onClick={loadData}
                                         className="px-4 py-2 bg-brand-gold/20 hover:bg-brand-gold/30 text-brand-gold text-xs font-semibold rounded-lg"
                                         title="Refresh data"
                                     >
@@ -2512,9 +2570,8 @@ export default function AdminPage() {
                                         <label className="block text-sm font-semibold text-brand-text-secondary mb-4">Market Status</label>
                                         <button
                                             onClick={() => freezeSymbol(selectedSymbol, !ruleForm.isFrozen)}
-                                            className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${
-                                                ruleForm.isFrozen ? 'bg-brand-red text-white' : 'bg-brand-green text-white'
-                                            }`}
+                                            className={`w-full py-3 rounded-lg font-bold text-sm transition-all ${ruleForm.isFrozen ? 'bg-brand-red text-white' : 'bg-brand-green text-white'
+                                                }`}
                                         >
                                             {ruleForm.isFrozen ? 'MARKET FROZEN' : 'MARKET ACTIVE'}
                                         </button>
@@ -2546,11 +2603,10 @@ export default function AdminPage() {
                                                         setSelectedSymbol(symbol);
                                                         loadData();
                                                     }}
-                                                    className={`w-full py-2 rounded-lg text-xs font-semibold transition-colors ${
-                                                        rule?.isFrozen 
-                                                            ? 'bg-brand-red/20 text-brand-red border border-brand-red/30' 
-                                                            : 'bg-brand-green/20 text-brand-green border border-brand-green/30'
-                                                    }`}
+                                                    className={`w-full py-2 rounded-lg text-xs font-semibold transition-colors ${rule?.isFrozen
+                                                        ? 'bg-brand-red/20 text-brand-red border border-brand-red/30'
+                                                        : 'bg-brand-green/20 text-brand-green border border-brand-green/30'
+                                                        }`}
                                                 >
                                                     {rule?.isFrozen ? 'FROZEN' : 'ACTIVE'}
                                                 </button>
@@ -2804,7 +2860,7 @@ export default function AdminPage() {
                                 const cancelledOrders = allOrders.filter(o => o.status === 'CANCELLED').length;
                                 const limitOrders = allOrders.filter(o => o.orderType === 'LIMIT').length;
                                 const stopOrders = allOrders.filter(o => o.orderType === 'STOP').length;
-                                
+
                                 return (
                                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                         <div className="card rounded-lg p-4">
@@ -2834,161 +2890,160 @@ export default function AdminPage() {
                             {/* Orders Table */}
                             <div className="card rounded-lg p-6">
                                 <div className="overflow-x-auto">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
-                                        <thead>
-                                            <tr className="border-b border-white/10">
-                                                <th 
-                                                    className="pb-3 text-xs font-bold text-brand-text-secondary uppercase cursor-pointer hover:text-white transition-colors"
-                                                    onClick={() => {
-                                                        const newOrder = ordersSort.sortBy === 'createdAt' && ordersSort.sortOrder === 'desc' ? 'asc' : 'desc';
-                                                        setOrdersSort({ sortBy: 'createdAt', sortOrder: newOrder });
-                                                        setOrdersPagination({ ...ordersPagination, page: 1 });
-                                                    }}
-                                                >
-                                                    Order ID
-                                                    {ordersSort.sortBy === 'createdAt' && (
-                                                        <span className="ml-1">{ordersSort.sortOrder === 'asc' ? '↑' : '↓'}</span>
-                                                    )}
-                                                </th>
-                                                <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">User</th>
-                                                <th 
-                                                    className="pb-3 text-xs font-bold text-brand-text-secondary uppercase cursor-pointer hover:text-white transition-colors"
-                                                    onClick={() => {
-                                                        const newOrder = ordersSort.sortBy === 'symbol' && ordersSort.sortOrder === 'desc' ? 'asc' : 'desc';
-                                                        setOrdersSort({ sortBy: 'symbol', sortOrder: newOrder });
-                                                        setOrdersPagination({ ...ordersPagination, page: 1 });
-                                                    }}
-                                                >
-                                                    Symbol
-                                                    {ordersSort.sortBy === 'symbol' && (
-                                                        <span className="ml-1">{ordersSort.sortOrder === 'asc' ? '↑' : '↓'}</span>
-                                                    )}
-                                                </th>
-                                                <th 
-                                                    className="pb-3 text-xs font-bold text-brand-text-secondary uppercase cursor-pointer hover:text-white transition-colors"
-                                                    onClick={() => {
-                                                        const newOrder = ordersSort.sortBy === 'orderType' && ordersSort.sortOrder === 'desc' ? 'asc' : 'desc';
-                                                        setOrdersSort({ sortBy: 'orderType', sortOrder: newOrder });
-                                                        setOrdersPagination({ ...ordersPagination, page: 1 });
-                                                    }}
-                                                >
-                                                    Type
-                                                    {ordersSort.sortBy === 'orderType' && (
-                                                        <span className="ml-1">{ordersSort.sortOrder === 'asc' ? '↑' : '↓'}</span>
-                                                    )}
-                                                </th>
-                                                <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Direction</th>
-                                                <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Lot Size</th>
-                                                <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Price</th>
-                                                <th 
-                                                    className="pb-3 text-xs font-bold text-brand-text-secondary uppercase cursor-pointer hover:text-white transition-colors"
-                                                    onClick={() => {
-                                                        const newOrder = ordersSort.sortBy === 'status' && ordersSort.sortOrder === 'desc' ? 'asc' : 'desc';
-                                                        setOrdersSort({ sortBy: 'status', sortOrder: newOrder });
-                                                        setOrdersPagination({ ...ordersPagination, page: 1 });
-                                                    }}
-                                                >
-                                                    Status
-                                                    {ordersSort.sortBy === 'status' && (
-                                                        <span className="ml-1">{ordersSort.sortOrder === 'asc' ? '↑' : '↓'}</span>
-                                                    )}
-                                                </th>
-                                                <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Created</th>
-                                                <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {allOrders.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={10} className="py-8 text-center text-brand-text-secondary">
-                                                        {orderFilters.status || orderFilters.symbol || orderFilters.orderType || orderFilters.search
-                                                            ? 'No orders match the filters'
-                                                            : 'No orders found'}
-                                                    </td>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="border-b border-white/10">
+                                                    <th
+                                                        className="pb-3 text-xs font-bold text-brand-text-secondary uppercase cursor-pointer hover:text-white transition-colors"
+                                                        onClick={() => {
+                                                            const newOrder = ordersSort.sortBy === 'createdAt' && ordersSort.sortOrder === 'desc' ? 'asc' : 'desc';
+                                                            setOrdersSort({ sortBy: 'createdAt', sortOrder: newOrder });
+                                                            setOrdersPagination({ ...ordersPagination, page: 1 });
+                                                        }}
+                                                    >
+                                                        Order ID
+                                                        {ordersSort.sortBy === 'createdAt' && (
+                                                            <span className="ml-1">{ordersSort.sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                                        )}
+                                                    </th>
+                                                    <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">User</th>
+                                                    <th
+                                                        className="pb-3 text-xs font-bold text-brand-text-secondary uppercase cursor-pointer hover:text-white transition-colors"
+                                                        onClick={() => {
+                                                            const newOrder = ordersSort.sortBy === 'symbol' && ordersSort.sortOrder === 'desc' ? 'asc' : 'desc';
+                                                            setOrdersSort({ sortBy: 'symbol', sortOrder: newOrder });
+                                                            setOrdersPagination({ ...ordersPagination, page: 1 });
+                                                        }}
+                                                    >
+                                                        Symbol
+                                                        {ordersSort.sortBy === 'symbol' && (
+                                                            <span className="ml-1">{ordersSort.sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                                        )}
+                                                    </th>
+                                                    <th
+                                                        className="pb-3 text-xs font-bold text-brand-text-secondary uppercase cursor-pointer hover:text-white transition-colors"
+                                                        onClick={() => {
+                                                            const newOrder = ordersSort.sortBy === 'orderType' && ordersSort.sortOrder === 'desc' ? 'asc' : 'desc';
+                                                            setOrdersSort({ sortBy: 'orderType', sortOrder: newOrder });
+                                                            setOrdersPagination({ ...ordersPagination, page: 1 });
+                                                        }}
+                                                    >
+                                                        Type
+                                                        {ordersSort.sortBy === 'orderType' && (
+                                                            <span className="ml-1">{ordersSort.sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                                        )}
+                                                    </th>
+                                                    <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Direction</th>
+                                                    <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Lot Size</th>
+                                                    <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Price</th>
+                                                    <th
+                                                        className="pb-3 text-xs font-bold text-brand-text-secondary uppercase cursor-pointer hover:text-white transition-colors"
+                                                        onClick={() => {
+                                                            const newOrder = ordersSort.sortBy === 'status' && ordersSort.sortOrder === 'desc' ? 'asc' : 'desc';
+                                                            setOrdersSort({ sortBy: 'status', sortOrder: newOrder });
+                                                            setOrdersPagination({ ...ordersPagination, page: 1 });
+                                                        }}
+                                                    >
+                                                        Status
+                                                        {ordersSort.sortBy === 'status' && (
+                                                            <span className="ml-1">{ordersSort.sortOrder === 'asc' ? '↑' : '↓'}</span>
+                                                        )}
+                                                    </th>
+                                                    <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Created</th>
+                                                    <th className="pb-3 text-xs font-bold text-brand-text-secondary uppercase">Actions</th>
                                                 </tr>
-                                            ) : (
-                                                (() => {
-                                                    // Client-side filtering for search and user (not supported by backend yet)
-                                                    const filteredOrders = allOrders.filter(order => {
-                                                        if (orderFilters.userId && order.userId !== orderFilters.userId) return false;
-                                                        if (orderFilters.search) {
-                                                            const searchLower = orderFilters.search.toLowerCase();
+                                            </thead>
+                                            <tbody>
+                                                {allOrders.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan={10} className="py-8 text-center text-brand-text-secondary">
+                                                            {orderFilters.status || orderFilters.symbol || orderFilters.orderType || orderFilters.search
+                                                                ? 'No orders match the filters'
+                                                                : 'No orders found'}
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    (() => {
+                                                        // Client-side filtering for search and user (not supported by backend yet)
+                                                        const filteredOrders = allOrders.filter(order => {
+                                                            if (orderFilters.userId && order.userId !== orderFilters.userId) return false;
+                                                            if (orderFilters.search) {
+                                                                const searchLower = orderFilters.search.toLowerCase();
+                                                                const userInfo = users.find(u => u._id === order.userId);
+                                                                const userSearch = userInfo ? `${userInfo.firstName} ${userInfo.lastName} ${userInfo.email}`.toLowerCase() : '';
+                                                                if (!order._id.toLowerCase().includes(searchLower) &&
+                                                                    !order.symbol.toLowerCase().includes(searchLower) &&
+                                                                    !userSearch.includes(searchLower)) return false;
+                                                            }
+                                                            return true;
+                                                        });
+
+                                                        return filteredOrders.map((order: any) => {
                                                             const userInfo = users.find(u => u._id === order.userId);
-                                                            const userSearch = userInfo ? `${userInfo.firstName} ${userInfo.lastName} ${userInfo.email}`.toLowerCase() : '';
-                                                            if (!order._id.toLowerCase().includes(searchLower) && 
-                                                                !order.symbol.toLowerCase().includes(searchLower) &&
-                                                                !userSearch.includes(searchLower)) return false;
-                                                        }
-                                                        return true;
-                                                    });
-                                                    
-                                                    return filteredOrders.map((order: any) => {
-                                                    const userInfo = users.find(u => u._id === order.userId);
-                                                    return (
-                                                        <tr key={order._id} className="border-b border-white/5">
-                                                            <td className="py-3 text-xs font-mono">{order._id.slice(-8)}</td>
-                                                            <td className="py-3 text-xs">
-                                                                {userInfo ? `${userInfo.firstName} ${userInfo.lastName}` : 'Unknown'}
-                                                                <br />
-                                                                <span className="text-brand-text-secondary">{userInfo?.email || order.userId}</span>
-                                                            </td>
-                                                            <td className="py-3 text-xs font-semibold">{order.symbol}</td>
-                                                            <td className="py-3 text-xs">
-                                                                <span className={`badge ${order.orderType === 'LIMIT' ? 'badge-info' : 'badge-warning'}`}>
-                                                                    {order.orderType}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-3 text-xs">
-                                                                <span className={`badge ${order.direction === 'BUY' ? 'badge-success' : 'badge-danger'}`}>
-                                                                    {order.direction}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-3 text-xs">{order.lotSize}</td>
-                                                            <td className="py-3 text-xs">
-                                                                {order.orderType === 'LIMIT' ? order.limitPrice?.toFixed(5) : order.triggerPrice?.toFixed(5)}
-                                                            </td>
-                                                            <td className="py-3 text-xs">
-                                                                <span className={`badge ${
-                                                                    order.status === 'PENDING' ? 'badge-warning' :
-                                                                    order.status === 'FILLED' ? 'badge-success' :
-                                                                    'badge-danger'
-                                                                }`}>
-                                                                    {order.status}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-3 text-xs text-brand-text-secondary">
-                                                                {order.createdAt ? new Date(order.createdAt).toLocaleString() : '-'}
-                                                            </td>
-                                                            <td className="py-3">
-                                                                <div className="flex gap-2">
-                                                                    {order.status === 'PENDING' && (
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                setSelectedOrderToDelete(order._id);
-                                                                                setShowDeleteOrderModal(true);
-                                                                            }}
-                                                                            className="px-3 py-1.5 bg-brand-red/20 hover:bg-brand-red/30 text-brand-red text-[10px] font-semibold rounded transition-colors"
-                                                                        >
-                                                                            Delete
-                                                                        </button>
-                                                                    )}
-                                                                    {order.status === 'FILLED' && order.tradeId && (
-                                                                        <span className="text-xs text-brand-text-secondary">Trade: {order.tradeId.slice(-8)}</span>
-                                                                    )}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                });
-                                                })()
-                                            )}
-                                        </tbody>
-                                    </table>
+                                                            return (
+                                                                <tr key={order._id} className="border-b border-white/5">
+                                                                    <td className="py-3 text-xs font-mono">{order._id.slice(-8)}</td>
+                                                                    <td className="py-3 text-xs">
+                                                                        {userInfo ? `${userInfo.firstName} ${userInfo.lastName}` : 'Unknown'}
+                                                                        <br />
+                                                                        <span className="text-brand-text-secondary">{userInfo?.email || order.userId}</span>
+                                                                    </td>
+                                                                    <td className="py-3 text-xs font-semibold">{order.symbol}</td>
+                                                                    <td className="py-3 text-xs">
+                                                                        <span className={`badge ${order.orderType === 'LIMIT' ? 'badge-info' : 'badge-warning'}`}>
+                                                                            {order.orderType}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="py-3 text-xs">
+                                                                        <span className={`badge ${order.direction === 'BUY' ? 'badge-success' : 'badge-danger'}`}>
+                                                                            {order.direction}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="py-3 text-xs">{order.lotSize}</td>
+                                                                    <td className="py-3 text-xs">
+                                                                        {order.orderType === 'LIMIT' ? order.limitPrice?.toFixed(5) : order.triggerPrice?.toFixed(5)}
+                                                                    </td>
+                                                                    <td className="py-3 text-xs">
+                                                                        <span className={`badge ${order.status === 'PENDING' ? 'badge-warning' :
+                                                                            order.status === 'FILLED' ? 'badge-success' :
+                                                                                'badge-danger'
+                                                                            }`}>
+                                                                            {order.status}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="py-3 text-xs text-brand-text-secondary">
+                                                                        {order.createdAt ? new Date(order.createdAt).toLocaleString() : '-'}
+                                                                    </td>
+                                                                    <td className="py-3">
+                                                                        <div className="flex gap-2">
+                                                                            {order.status === 'PENDING' && (
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        setSelectedOrderToDelete(order._id);
+                                                                                        setShowDeleteOrderModal(true);
+                                                                                    }}
+                                                                                    className="px-3 py-1.5 bg-brand-red/20 hover:bg-brand-red/30 text-brand-red text-[10px] font-semibold rounded transition-colors"
+                                                                                >
+                                                                                    Delete
+                                                                                </button>
+                                                                            )}
+                                                                            {order.status === 'FILLED' && order.tradeId && (
+                                                                                <span className="text-xs text-brand-text-secondary">Trade: {order.tradeId.slice(-8)}</span>
+                                                                            )}
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        });
+                                                    })()
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                            </div>
-                                
-                            {/* Pagination Controls for Orders */}
+
+                                {/* Pagination Controls for Orders */}
                                 {ordersPagination.totalPages > 1 && (
                                     <div className="card rounded-lg p-4 mt-4">
                                         <div className="flex items-center justify-between flex-wrap gap-4">

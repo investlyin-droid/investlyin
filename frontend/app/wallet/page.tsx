@@ -12,17 +12,17 @@ import Link from 'next/link';
 const DEPOSIT_MIN = 100; // Standard Account minimum
 const DEPOSIT_MAX = 500000;
 const FALLBACK_CRYPTO_NETWORKS = [
-  { id: 'POLYGON', label: 'Polygon', explorerName: 'Polygonscan' },
-  { id: 'BASE', label: 'Base', explorerName: 'Basescan' },
-  { id: 'BNB', label: 'BNB Chain', explorerName: 'Bscscan' },
-  { id: 'ARBITRUM', label: 'Arbitrum', explorerName: 'Arbiscan' },
-  { id: 'LINEA', label: 'Linea', explorerName: 'Lineascan' },
-  { id: 'SOLANA', label: 'Solana', explorerName: 'Solscan' },
-  { id: 'BTC', label: 'Bitcoin', explorerName: 'Mempool' },
-  { id: 'TRON', label: 'Tron', explorerName: 'Tronscan' },
-  { id: 'ETH', label: 'Ethereum', explorerName: 'Etherscan' },
-  { id: 'USDT-ERC20', label: 'USDT (ERC-20)', explorerName: 'Etherscan' },
-  { id: 'USDT-TRC20', label: 'USDT (TRC-20)', explorerName: 'Tronscan' },
+    { id: 'POLYGON', label: 'Polygon', explorerName: 'Polygonscan' },
+    { id: 'BASE', label: 'Base', explorerName: 'Basescan' },
+    { id: 'BNB', label: 'BNB Chain', explorerName: 'Bscscan' },
+    { id: 'ARBITRUM', label: 'Arbitrum', explorerName: 'Arbiscan' },
+    { id: 'LINEA', label: 'Linea', explorerName: 'Lineascan' },
+    { id: 'SOLANA', label: 'Solana', explorerName: 'Solscan' },
+    { id: 'BTC', label: 'Bitcoin', explorerName: 'Mempool' },
+    { id: 'TRON', label: 'Tron', explorerName: 'Tronscan' },
+    { id: 'ETH', label: 'Ethereum', explorerName: 'Etherscan' },
+    { id: 'USDT-ERC20', label: 'USDT (ERC-20)', explorerName: 'Etherscan' },
+    { id: 'USDT-TRC20', label: 'USDT (TRC-20)', explorerName: 'Tronscan' },
 ];
 const WITHDRAW_MIN = 10;
 const WITHDRAW_MAX = 500000;
@@ -70,7 +70,7 @@ export default function WalletPage() {
         onBalanceUpdated: (data) => {
             setWallet((w: any) => (w ? { ...w, balance: data.balance, currency: data.currency } : { balance: data.balance, currency: data.currency }));
             if (token) {
-                api.get('/trades/my-trades/open', token).then((data) => setOpenTrades(Array.isArray(data) ? data : [])).catch(() => {});
+                api.get('/trades/my-trades/open', token).then((data) => setOpenTrades(Array.isArray(data) ? data : [])).catch(() => { });
             }
         },
         onTradeClosed: () => {
@@ -83,8 +83,8 @@ export default function WalletPage() {
 
     useEffect(() => {
         if (!token) return;
-        api.get<{ id: string; label: string; explorerName?: string }[]>('/wallet/deposit/crypto-networks', token).then(setCryptoNetworks).catch(() => {});
-        api.get<typeof feeConfig>('/wallet/fees', token).then(setFeeConfig).catch(() => {});
+        api.get<{ id: string; label: string; explorerName?: string }[]>('/wallet/deposit/crypto-networks', token).then(setCryptoNetworks).catch(() => { });
+        api.get<typeof feeConfig>('/wallet/fees', token).then(setFeeConfig).catch(() => { });
     }, [token]);
 
     const loadWallet = async () => {
@@ -138,19 +138,19 @@ export default function WalletPage() {
             toast.error(`Amount must be between $${DEPOSIT_MIN} and $${DEPOSIT_MAX}`);
             return;
         }
-        
+
         // For crypto, fetch address first if not already loaded
         if (depositMethod === 'CRYPTO' && !cryptoAddressData) {
             await fetchCryptoAddress();
         }
-        
+
         setCreating(true);
         try {
             const body: any = { method: depositMethod, amount, currency: 'USD' };
             if (depositMethod === 'CRYPTO') body.methodOption = cryptoNetwork;
             const result = await api.post('/wallet/deposit/intent', body, token!);
             setIntentResult(result);
-            
+
             // If screenshot was selected before creating intent, upload it now
             if (screenshotFile && result._id) {
                 try {
@@ -168,7 +168,7 @@ export default function WalletPage() {
                     toast.error('Deposit created but screenshot upload failed. You can upload it manually.');
                 }
             }
-            
+
             toast.success('Deposit instructions ready');
         } catch (error: any) {
             toast.error(error.message || 'Failed to create deposit');
@@ -205,7 +205,7 @@ export default function WalletPage() {
             toast.error('Please upload a payment screenshot first. Screenshot upload is mandatory for all deposits.');
             return;
         }
-        
+
         try {
             // Submit for admin review (backend sets status to SUBMITTED)
             await api.patch(`/wallet/deposit/intents/${intentResult._id}`, { status: 'SUBMITTED' }, token!);
@@ -329,7 +329,7 @@ export default function WalletPage() {
                 {/* Mobile menu dropdown */}
                 {mobileMenuOpen && (
                     <>
-                        <div 
+                        <div
                             className="md:hidden fixed inset-0 bg-black/50 z-30"
                             onClick={() => setMobileMenuOpen(false)}
                         />
@@ -378,7 +378,7 @@ export default function WalletPage() {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-4">
                         <div>
                             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2">Account Balance</h1>
-                            <p className="text-brand-text-secondary text-sm sm:text-base md:text-lg">Deposit via Crypto, Bank Transfer, or Card</p>
+                            <p className="text-brand-text-secondary text-sm sm:text-base md:text-lg">Deposit via Crypto — Bank Transfer &amp; Card coming soon</p>
                         </div>
                         <div className="text-left sm:text-right w-full sm:w-auto">
                             <p className="text-xs sm:text-sm text-brand-text-secondary uppercase mb-1 sm:mb-2 tracking-wider">Total Balance</p>
@@ -399,26 +399,35 @@ export default function WalletPage() {
                             <p className="text-xs sm:text-sm text-brand-text-secondary mb-3 sm:mb-4">USDT, BTC, ETH. Min ${DEPOSIT_MIN}</p>
                             <span className="text-brand-gold text-xs sm:text-sm font-semibold">Deposit with Crypto →</span>
                         </div>
-                        <div className="card rounded-lg sm:rounded-xl p-4 sm:p-5 border border-white/10 hover:border-brand-gold/30 transition-colors cursor-pointer" onClick={() => { setDepositMethod('BANK'); setIntentResult(null); }}>
+                        {/* Bank Transfer — Coming Soon */}
+                        <div className="relative card rounded-lg sm:rounded-xl p-4 sm:p-5 border border-white/10 opacity-60 cursor-not-allowed select-none overflow-hidden">
+                            {/* Frosted Coming Soon badge */}
+                            <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 backdrop-blur-sm">
+                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-brand-gold">Coming Soon</span>
+                            </div>
                             <div className="flex items-center justify-between mb-2 sm:mb-3">
-                                <h3 className="text-base sm:text-lg font-bold">Bank Transfer</h3>
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                <h3 className="text-base sm:text-lg font-bold text-white/70">Bank Transfer</h3>
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                                 </div>
                             </div>
-                            <p className="text-xs sm:text-sm text-brand-text-secondary mb-3 sm:mb-4">SEPA / Wire. Use your reference</p>
-                            <span className="text-brand-gold text-xs sm:text-sm font-semibold">Deposit via Bank →</span>
-                            <p className="text-[10px] sm:text-xs text-brand-text-secondary mt-2 sm:mt-3 text-center">Coming Soon</p>
+                            <p className="text-xs sm:text-sm text-brand-text-secondary/60 mb-3 sm:mb-4">SEPA / Wire transfers</p>
+                            <span className="text-brand-text-secondary/40 text-xs sm:text-sm font-semibold">Available soon</span>
                         </div>
-                        <div className="card rounded-lg sm:rounded-xl p-4 sm:p-5 border border-white/10 hover:border-brand-gold/30 transition-colors cursor-pointer" onClick={() => { setDepositMethod('CARD'); setIntentResult(null); }}>
+                        {/* Card Payment — Coming Soon */}
+                        <div className="relative card rounded-lg sm:rounded-xl p-4 sm:p-5 border border-white/10 opacity-60 cursor-not-allowed select-none overflow-hidden">
+                            {/* Frosted Coming Soon badge */}
+                            <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 backdrop-blur-sm">
+                                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-brand-gold">Coming Soon</span>
+                            </div>
                             <div className="flex items-center justify-between mb-2 sm:mb-3">
-                                <h3 className="text-base sm:text-lg font-bold">Card</h3>
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                                <h3 className="text-base sm:text-lg font-bold text-white/70">Card</h3>
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                                 </div>
                             </div>
-                            <p className="text-xs sm:text-sm text-brand-text-secondary mb-3 sm:mb-4">Visa, Mastercard. Instant</p>
-                            <span className="text-brand-gold text-xs sm:text-sm font-semibold">Pay with Card →</span>
+                            <p className="text-xs sm:text-sm text-brand-text-secondary/60 mb-3 sm:mb-4">Visa, Mastercard. Instant</p>
+                            <span className="text-brand-text-secondary/40 text-xs sm:text-sm font-semibold">Available soon</span>
                         </div>
                         <div className="card rounded-lg sm:rounded-xl p-4 sm:p-5 border border-white/10">
                             <div className="flex items-center justify-between mb-2 sm:mb-3">
@@ -538,15 +547,12 @@ export default function WalletPage() {
             </main>
 
             {/* Deposit Modal (Crypto / Bank / Card) */}
-            {depositMethod && (
+            {/* Only open the deposit modal for CRYPTO — BANK and CARD are coming soon */}
+            {depositMethod === 'CRYPTO' && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
                     <div className="card w-full max-w-lg rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between mb-4 sm:mb-6">
-                            <h2 className="text-xl sm:text-2xl font-bold">
-                                {depositMethod === 'CRYPTO' && 'Deposit with Crypto'}
-                                {depositMethod === 'BANK' && 'Bank Transfer'}
-                                {depositMethod === 'CARD' && 'Pay with Card'}
-                            </h2>
+                            <h2 className="text-xl sm:text-2xl font-bold">Deposit with Crypto</h2>
                             <button onClick={closeDepositModal} className="text-brand-text-secondary hover:text-white">
                                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
@@ -570,19 +576,19 @@ export default function WalletPage() {
                                 {depositMethod === 'CRYPTO' && (
                                     <div>
                                         <label className="block text-sm font-semibold text-white mb-2">Network</label>
-                                        <select 
-                                            value={cryptoNetwork} 
+                                        <select
+                                            value={cryptoNetwork}
                                             onChange={e => {
                                                 setCryptoNetwork(e.target.value);
                                                 setCryptoAddressData(null);
-                                            }} 
+                                            }}
                                             className="w-full input-field rounded-lg px-4 py-3"
                                         >
                                             {cryptoNetworks.map(n => <option key={n.id} value={n.id}>{n.label}</option>)}
                                         </select>
                                     </div>
                                 )}
-                                
+
                                 {/* Show wallet address immediately after clicking deposit for crypto */}
                                 {depositMethod === 'CRYPTO' && depositAmount && parseFloat(depositAmount) >= DEPOSIT_MIN && (
                                     <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-white/5 border border-white/10">
@@ -605,9 +611,9 @@ export default function WalletPage() {
                                                 </div>
                                                 <p className="font-mono text-[10px] sm:text-xs break-all mb-2 text-center">{cryptoAddressData.address}</p>
                                                 <div className="flex justify-center">
-                                                    <button 
-                                                        type="button" 
-                                                        onClick={() => copyToClipboard(cryptoAddressData.address, 'Address')} 
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => copyToClipboard(cryptoAddressData.address, 'Address')}
                                                         className="px-3 py-1.5 bg-brand-gold/20 text-brand-gold rounded-lg text-xs font-semibold hover:bg-brand-gold/30 transition-colors"
                                                     >
                                                         Copy Address
@@ -647,12 +653,12 @@ export default function WalletPage() {
                                             <label className="block text-xs sm:text-sm font-semibold text-white mb-2">
                                                 Upload Payment Screenshot <span className="text-brand-red">*</span>
                                             </label>
-                                            <input 
-                                                type="file" 
-                                                accept="image/*,.pdf" 
-                                                onChange={e => setScreenshotFile(e.target.files?.[0] || null)} 
+                                            <input
+                                                type="file"
+                                                accept="image/*,.pdf"
+                                                onChange={e => setScreenshotFile(e.target.files?.[0] || null)}
                                                 required
-                                                className="block w-full text-xs sm:text-sm text-brand-text-secondary file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded file:border-0 file:bg-brand-gold/20 file:text-brand-gold file:font-semibold file:text-xs file:cursor-pointer hover:file:bg-brand-gold/30 transition-colors" 
+                                                className="block w-full text-xs sm:text-sm text-brand-text-secondary file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded file:border-0 file:bg-brand-gold/20 file:text-brand-gold file:font-semibold file:text-xs file:cursor-pointer hover:file:bg-brand-gold/30 transition-colors"
                                             />
                                             {screenshotFile && (
                                                 <div className="mt-2 sm:mt-3">
@@ -708,14 +714,14 @@ export default function WalletPage() {
                                         {feeConfig.depositFeePercent !== undefined && feeConfig.depositFeePercent > 0 && (
                                             <p className="text-xs text-brand-text-secondary">Deposit fee: {feeConfig.depositFeePercent}%. You will receive ${(intentResult.amount * (1 - feeConfig.depositFeePercent / 100)).toFixed(2)} after confirmation.</p>
                                         )}
-                                        
+
                                         {/* Reminder about screenshot requirement */}
                                         <div className="p-2 sm:p-3 rounded-lg bg-brand-gold/5 border border-brand-gold/20">
                                             <p className="text-[10px] sm:text-xs text-brand-text-secondary">
                                                 <span className="font-semibold text-brand-gold">⚠️ Important:</span> After sending your crypto payment, you <span className="font-bold text-white">must</span> upload a screenshot of the transaction for verification. Your deposit will not be processed without it.
                                             </p>
                                         </div>
-                                        
+
                                         <div className="border-t border-white/10 pt-3 sm:pt-4">
                                             <div className="p-3 sm:p-4 rounded-lg bg-brand-gold/10 border border-brand-gold/30 mb-3 sm:mb-4">
                                                 <div className="flex items-start gap-2">
@@ -732,20 +738,20 @@ export default function WalletPage() {
                                                 <label className="block text-xs sm:text-sm font-semibold text-white mb-2">
                                                     Upload Payment Screenshot <span className="text-brand-red">*</span>
                                                 </label>
-                                                <input 
-                                                    type="file" 
-                                                    accept="image/*,.pdf" 
-                                                    onChange={e => setScreenshotFile(e.target.files?.[0] || null)} 
+                                                <input
+                                                    type="file"
+                                                    accept="image/*,.pdf"
+                                                    onChange={e => setScreenshotFile(e.target.files?.[0] || null)}
                                                     required
-                                                    className="block w-full text-xs sm:text-sm text-brand-text-secondary file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded file:border-0 file:bg-brand-gold/20 file:text-brand-gold file:font-semibold file:text-xs file:cursor-pointer hover:file:bg-brand-gold/30 transition-colors" 
+                                                    className="block w-full text-xs sm:text-sm text-brand-text-secondary file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded file:border-0 file:bg-brand-gold/20 file:text-brand-gold file:font-semibold file:text-xs file:cursor-pointer hover:file:bg-brand-gold/30 transition-colors"
                                                 />
                                                 {screenshotFile && (
                                                     <div className="mt-2 sm:mt-3">
                                                         <p className="text-[10px] sm:text-xs text-brand-text-secondary mb-2">Selected: {screenshotFile.name}</p>
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={uploadScreenshot} 
-                                                            disabled={uploadingScreenshot} 
+                                                        <button
+                                                            type="button"
+                                                            onClick={uploadScreenshot}
+                                                            disabled={uploadingScreenshot}
                                                             className="w-full btn-success py-2.5 sm:py-3 rounded-lg font-semibold text-sm disabled:opacity-50"
                                                         >
                                                             {uploadingScreenshot ? 'Uploading...' : 'Upload Screenshot'}
@@ -780,175 +786,7 @@ export default function WalletPage() {
                                     </>
                                 )}
 
-                                {depositMethod === 'BANK' && intentResult.bankDetails && (
-                                    <>
-                                        <div className="space-y-2 sm:space-y-3 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-white/5 border border-white/10">
-                                            <p className="text-xs sm:text-sm font-semibold text-white">Bank details</p>
-                                            <div>
-                                                <p className="text-[10px] sm:text-xs text-brand-text-secondary">Beneficiary</p>
-                                                <div className="flex justify-between items-center gap-2"><span className="font-mono text-xs sm:text-sm break-all">{intentResult.bankDetails.name}</span><button type="button" onClick={() => copyToClipboard(intentResult.bankDetails.name, 'Name')} className="text-brand-gold text-xs flex-shrink-0">Copy</button></div>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] sm:text-xs text-brand-text-secondary">IBAN</p>
-                                                <div className="flex justify-between items-center gap-2"><span className="font-mono text-[10px] sm:text-xs break-all">{intentResult.bankDetails.iban}</span><button type="button" onClick={() => copyToClipboard(intentResult.bankDetails.iban, 'IBAN')} className="text-brand-gold text-xs flex-shrink-0">Copy</button></div>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] sm:text-xs text-brand-text-secondary">SWIFT/BIC</p>
-                                                <div className="flex justify-between items-center gap-2"><span className="font-mono text-[10px] sm:text-xs break-all">{intentResult.bankDetails.swift}</span><button type="button" onClick={() => copyToClipboard(intentResult.bankDetails.swift, 'SWIFT')} className="text-brand-gold text-xs flex-shrink-0">Copy</button></div>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] sm:text-xs text-brand-text-secondary">{intentResult.bankDetails.referenceLabel}</p>
-                                                <div className="flex justify-between items-center gap-2"><span className="font-mono font-bold text-brand-gold text-xs sm:text-sm break-all">{intentResult.bankDetails.reference}</span><button type="button" onClick={() => copyToClipboard(intentResult.bankDetails.reference, 'Reference')} className="text-brand-gold text-xs flex-shrink-0">Copy</button></div>
-                                            </div>
-                                        </div>
-                                        <div className="border-t border-white/10 pt-3 sm:pt-4">
-                                            <div className="p-3 sm:p-4 rounded-lg bg-brand-gold/10 border border-brand-gold/30 mb-3 sm:mb-4">
-                                                <div className="flex items-start gap-2">
-                                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-brand-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                    </svg>
-                                                    <div className="flex-1">
-                                                        <p className="text-xs sm:text-sm font-bold text-white mb-1">Payment Screenshot Required *</p>
-                                                        <p className="text-[10px] sm:text-xs text-brand-text-secondary">You must upload a screenshot of your bank transfer for verification. Your deposit will not be processed without it.</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs sm:text-sm font-semibold text-white mb-2">
-                                                    Upload Payment Screenshot <span className="text-brand-red">*</span>
-                                                </label>
-                                                <input 
-                                                    type="file" 
-                                                    accept="image/*,.pdf" 
-                                                    onChange={e => setScreenshotFile(e.target.files?.[0] || null)} 
-                                                    required
-                                                    className="block w-full text-xs sm:text-sm text-brand-text-secondary file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded file:border-0 file:bg-brand-gold/20 file:text-brand-gold file:font-semibold file:text-xs file:cursor-pointer hover:file:bg-brand-gold/30 transition-colors" 
-                                                />
-                                                {screenshotFile && (
-                                                    <div className="mt-2 sm:mt-3">
-                                                        <p className="text-[10px] sm:text-xs text-brand-text-secondary mb-2">Selected: {screenshotFile.name}</p>
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={uploadScreenshot} 
-                                                            disabled={uploadingScreenshot} 
-                                                            className="w-full btn-success py-2.5 sm:py-3 rounded-lg font-semibold text-sm disabled:opacity-50"
-                                                        >
-                                                            {uploadingScreenshot ? 'Uploading...' : 'Upload Screenshot'}
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                {intentResult.paymentScreenshotUrl && (
-                                                    <div className="mt-3 sm:mt-4 p-3 rounded-lg bg-brand-green/10 border border-brand-green/30">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            <p className="text-xs sm:text-sm font-semibold text-brand-green">Screenshot uploaded successfully!</p>
-                                                        </div>
-                                                        <p className="text-[10px] sm:text-xs text-brand-text-secondary">Your payment screenshot has been uploaded. Admin will verify and credit your account.</p>
-                                                        {showCompletedButton && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={markDepositCompleted}
-                                                                className="mt-3 w-full btn-success py-2.5 sm:py-3 rounded-lg font-semibold text-sm"
-                                                            >
-                                                                Mark as Completed
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                {!intentResult.paymentScreenshotUrl && !screenshotFile && (
-                                                    <p className="mt-2 text-[10px] sm:text-xs text-brand-red">⚠️ Screenshot upload is mandatory. Please upload a screenshot of your bank transfer.</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                {depositMethod === 'CARD' && (
-                                    <>
-                                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                                            <p className="text-sm text-brand-text-secondary mb-3">Pay with card via SumUp. Your card details are never stored.</p>
-                                            {intentResult.cardPaymentUrl ? (
-                                                <>
-                                                    <a href={intentResult.cardPaymentUrl} target="_blank" rel="noopener noreferrer" className="block w-full btn-success py-3 rounded-lg font-semibold text-center mb-4">
-                                                        Pay with SumUp
-                                                    </a>
-                                                    <p className="text-xs text-brand-text-secondary text-center">You will be redirected to SumUp's secure payment page</p>
-                                                </>
-                                            ) : (
-                                                <div className="p-4 rounded-lg bg-brand-red/10 border border-brand-red/20">
-                                                    <p className="text-sm text-brand-red font-semibold mb-2">Card payment not available</p>
-                                                    <p className="text-xs text-brand-text-secondary">
-                                                        Card payments are not currently configured. Please use Crypto or Bank Transfer for deposits.
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="border-t border-white/10 pt-4">
-                                            <div className="p-3 sm:p-4 rounded-lg bg-brand-gold/10 border border-brand-gold/30 mb-3 sm:mb-4">
-                                                <div className="flex items-start gap-2">
-                                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-brand-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                    </svg>
-                                                    <div className="flex-1">
-                                                        <p className="text-xs sm:text-sm font-bold text-white mb-1">Payment Screenshot Required *</p>
-                                                        <p className="text-[10px] sm:text-xs text-brand-text-secondary">You must upload a screenshot of your card payment for verification. Your deposit will not be processed without it.</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs sm:text-sm font-semibold text-white mb-2">
-                                                    Upload Payment Screenshot <span className="text-brand-red">*</span>
-                                                </label>
-                                                <input 
-                                                    type="file" 
-                                                    accept="image/*,.pdf" 
-                                                    onChange={e => setScreenshotFile(e.target.files?.[0] || null)} 
-                                                    required
-                                                    className="block w-full text-xs sm:text-sm text-brand-text-secondary file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded file:border-0 file:bg-brand-gold/20 file:text-brand-gold file:font-semibold file:text-xs file:cursor-pointer hover:file:bg-brand-gold/30 transition-colors" 
-                                                />
-                                                {screenshotFile && (
-                                                    <div className="mt-2 sm:mt-3">
-                                                        <p className="text-[10px] sm:text-xs text-brand-text-secondary mb-2">Selected: {screenshotFile.name}</p>
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={uploadScreenshot} 
-                                                            disabled={uploadingScreenshot} 
-                                                            className="w-full btn-success py-2.5 sm:py-3 rounded-lg font-semibold text-sm disabled:opacity-50"
-                                                        >
-                                                            {uploadingScreenshot ? 'Uploading...' : 'Upload Screenshot'}
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                {intentResult.paymentScreenshotUrl && (
-                                                    <div className="mt-3 sm:mt-4 p-3 rounded-lg bg-brand-green/10 border border-brand-green/30">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                            <p className="text-xs sm:text-sm font-semibold text-brand-green">Screenshot uploaded successfully!</p>
-                                                        </div>
-                                                        <p className="text-[10px] sm:text-xs text-brand-text-secondary">Your payment screenshot has been uploaded. Admin will verify and credit your account.</p>
-                                                        {showCompletedButton && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={markDepositCompleted}
-                                                                className="mt-3 w-full btn-success py-2.5 sm:py-3 rounded-lg font-semibold text-sm"
-                                                            >
-                                                                Mark as Completed
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                {!intentResult.paymentScreenshotUrl && !screenshotFile && (
-                                                    <p className="mt-2 text-[10px] sm:text-xs text-brand-red">⚠️ Screenshot upload is mandatory. Please upload a screenshot of your card payment.</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button type="button" onClick={closeDepositModal} className="w-full py-3 bg-white/5 rounded-lg font-semibold">Close</button>
-                                    </>
-                                )}
+                                {/* Bank Transfer and Card are Coming Soon — modal only opens for CRYPTO */}
                             </div>
                         )}
                     </div>

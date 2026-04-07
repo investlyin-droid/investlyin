@@ -133,13 +133,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsLoading(false);
           return;
         }
-        
+
         if (firebaseUser) {
           // User is signed in with Firebase
           // Check if we're on login/register page and should redirect
           const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
           const isOnAuthPage = currentPath === '/login' || currentPath === '/register';
-          
+
           // Only sync if we don't already have a token (avoid duplicate calls)
           const existingToken = localStorage.getItem('token');
           if (existingToken && !isOnAuthPage) {
@@ -147,13 +147,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsLoading(false);
             return;
           }
-          
+
           // If on auth page and user is authenticated, we should redirect
-          if (isOnAuthPage && existingToken) {
+          if (isOnAuthPage) {
             const storedUser = localStorage.getItem('user');
-            if (storedUser) {
+            const storedToken = localStorage.getItem('token');
+            if (storedUser && storedToken) {
               try {
                 const userData = JSON.parse(storedUser);
+                authDebugLog('User already authenticated on auth page, redirecting...');
                 redirectAfterAuth(getRedirectPath(userData.role, userData.adminAccessAllowed));
                 setIsLoading(false);
                 return;
@@ -166,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Sync with backend to get/create user profile
           try {
             const idToken = await firebaseUser.getIdToken();
-            
+
             // Try to get user from backend using Firebase token
             // If user doesn't exist, create them
             try {
@@ -188,13 +190,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   adminAccessAllowed: response.user.adminAccessAllowed,
                 };
                 persistAuth(response.access_token, userData);
-                
+
                 // If we're on login/register page and just authenticated, redirect
                 // But only if we're not already handling an OAuth redirect
                 if (typeof window !== 'undefined') {
                   const currentPath = window.location.pathname;
                   const isHandlingOAuth = localStorage.getItem('handling_redirect') === 'true';
-                  
+
                   if ((currentPath === '/login' || currentPath === '/register') && !isHandlingOAuth) {
                     redirectAfterAuth(getRedirectPath(userData.role, userData.adminAccessAllowed));
                   }
@@ -206,6 +208,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } catch (error) {
             authDebugWarn('Error syncing Firebase user with backend:', error);
+          }
+          if (isOnAuthPage) {
+            // Already authenticated, but on login/register page - force redirect
+            authDebugLog('User already authenticated, enforcing redirect from auth page');
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+              try {
+                const userData = JSON.parse(storedUser);
+                redirectAfterAuth(getRedirectPath(userData.role, userData.adminAccessAllowed));
+              } catch (e) {
+                authDebugLog('Error parsing stored user for redirect');
+              }
+            }
           }
         } else {
           // User is signed out
@@ -233,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Firebase custom claims can be set by admin in Firebase Console
       const tokenResult = await firebaseUser.getIdTokenResult();
       const customClaims = tokenResult.claims;
-      
+
       // Try to sync with backend to get user profile and role
       try {
         const response = await api.post<any>('/auth/firebase-login', {
@@ -272,7 +287,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Authentication completed but user data could not be retrieved');
     } catch (error: any) {
       let errorMessage = 'Authentication failed. Please check your credentials.';
-      
+
       if (error?.code) {
         // Firebase error
         errorMessage = error.message || errorMessage;
@@ -281,7 +296,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
-      
+
       const formattedError = new Error(errorMessage);
       if (error?.status) {
         (formattedError as any).status = error.status;
@@ -304,7 +319,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Prevent admin signup - admin accounts must be created manually in Firebase
       const emailLower = (data.email || '').toLowerCase();
-      
+
       // Check if trying to register with admin-like email (optional additional check)
       // Note: This is just a frontend check. Real admin role is controlled by Firebase custom claims
       if (emailLower.includes('admin') && (emailLower.includes('@admin') || emailLower.includes('admin@'))) {
@@ -334,7 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: 'user', // Explicitly set role to 'user' - never allow admin during registration
           },
         );
-        
+
         if (response.access_token && response.user) {
           // Ensure role is 'user' even if backend returns something else
           const userData = {
@@ -353,7 +368,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Registration completed but user data could not be retrieved');
     } catch (error: any) {
       let errorMessage = 'Registration failed. Please check your details.';
-      
+
       if (error?.code) {
         // Firebase error
         errorMessage = error.message || errorMessage;
@@ -362,37 +377,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
-      
+
       throw new Error(errorMessage);
     }
   };
 
   const loginWithProvider = async (provider: 'google' | 'apple'): Promise<void> => {
     try {
-      authDebugLog(`Initiating ${provider} sign-in...`);
-      // Use redirect-based OAuth to avoid Cross-Origin-Opener-Policy issues
+      authDebugLog(`Initiating ${provider} sign-in with popup...`);
+      let firebaseCredential;
       switch (provider) {
         case 'google':
-          await FirebaseAuthService.signInWithGoogle();
+          firebaseCredential = await FirebaseAuthService.signInWithGoogle();
           break;
         case 'apple':
-          await FirebaseAuthService.signInWithApple();
+          firebaseCredential = await FirebaseAuthService.signInWithApple();
           break;
         default:
           throw new Error('Unsupported provider');
       }
-      // Note: This function will redirect the page, so it won't return normally
-      // The redirect result should be handled via handleRedirectResult()
+
+      if (firebaseCredential && firebaseCredential.user) {
+        const firebaseUser = firebaseCredential.user;
+        const idToken = await firebaseUser.getIdToken();
+        const tokenResult = await firebaseUser.getIdTokenResult();
+        const customClaims = tokenResult.claims;
+        const role = (customClaims?.role as string) || 'user';
+        const displayName = getOAuthDisplayName(firebaseUser);
+
+        try {
+          const response = await api.post<any>('/auth/firebase-login', {
+            firebaseToken: idToken,
+            email: firebaseUser.email ?? undefined,
+            displayName: displayName || undefined,
+          });
+
+          if (response.access_token && response.user) {
+            const userData: User = {
+              id: response.user.id || response.user._id || firebaseUser.uid,
+              email: response.user.email || firebaseUser.email || '',
+              role: response.user.role || role,
+              firstName: response.user.firstName || (displayName.split(' ')[0] ?? ''),
+              lastName: response.user.lastName || (displayName.split(' ').slice(1).join(' ') ?? ''),
+              adminAccessAllowed: response.user.adminAccessAllowed,
+            };
+            persistAuth(response.access_token, userData);
+            redirectAfterAuth(getRedirectPath(userData.role, userData.adminAccessAllowed));
+          }
+        } catch (backendError: any) {
+          throw new Error(backendError?.response?.data?.message || backendError?.message || 'Server unavailable');
+        }
+      }
     } catch (error: any) {
       console.error(`${provider} sign-in error:`, error);
       let errorMessage = 'Authentication failed. Please try again.';
-      
+
       if (error?.code) {
         errorMessage = error.message || errorMessage;
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       // Provide more specific error messages
       if (error?.code === 'auth/unauthorized-domain') {
         errorMessage = 'This domain is not authorized for OAuth. Please ensure your domain is added to Firebase authorized domains, or use localhost for local development.';
@@ -402,7 +447,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         errorMessage =
           'Firebase Auth is not set up for this app: open Firebase Console → Authentication → Sign-in method, enable Google (and Apple if needed), then save. If you just created the project, click “Get started” on Authentication first.';
       }
-      
+
       throw new Error(errorMessage);
     }
   };
@@ -412,28 +457,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsHandlingRedirect(true);
       // Set a flag in localStorage to prevent onAuthStateChange from interfering
       localStorage.setItem('handling_redirect', 'true');
-      
+
       // Check if we're coming from an OAuth redirect by checking URL parameters
       const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const hasOAuthParams = urlParams && (urlParams.has('code') || urlParams.has('state') || urlParams.has('authuser'));
-      
+
       authDebugLog('Checking for OAuth redirect result...', { hasOAuthParams });
-      
+
       let result: any = null;
       try {
         result = await FirebaseAuthService.getRedirectResult();
       } catch (redirectError: any) {
         // If sessionStorage error, check auth state instead
-        if (redirectError?.message?.includes('missing initial state') || 
-            redirectError?.message?.includes('sessionStorage') ||
-            redirectError?.code === 'auth/argument-error') {
+        if (redirectError?.message?.includes('missing initial state') ||
+          redirectError?.message?.includes('sessionStorage') ||
+          redirectError?.code === 'auth/argument-error') {
           authDebugWarn('SessionStorage error - checking auth state instead');
           result = null; // Will fall through to auth state check
         } else {
           throw redirectError;
         }
       }
-      
+
       if (!result) {
         authDebugLog('No redirect result - waiting for Firebase auth state...');
         const isAuthPage = typeof window !== 'undefined' && (window.location.pathname === '/login' || window.location.pathname === '/register');
@@ -548,16 +593,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       setIsHandlingRedirect(false);
       localStorage.removeItem('handling_redirect');
-      
+
       // If it's a "no redirect result" case, return null silently
-      if (error?.code === 'auth/no-auth-event' || 
-          error?.message?.includes('no-auth-event') ||
-          error?.code === 'auth/popup-closed-by-user' ||
-          error?.message?.includes('null')) {
+      if (error?.code === 'auth/no-auth-event' ||
+        error?.message?.includes('no-auth-event') ||
+        error?.code === 'auth/popup-closed-by-user' ||
+        error?.message?.includes('null')) {
         authDebugLog('No auth event detected (normal if not coming from redirect)');
         return null;
       }
-      
+
       let errorMessage = 'Authentication failed. Please try again.';
       if (error?.code) {
         errorMessage = error.message || errorMessage;
@@ -571,11 +616,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Handle OAuth redirect when user lands on ANY page (e.g. / after Google redirect)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const hasOAuthParams = params.has('code') || params.has('state') || params.has('authuser');
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasOAuthParams = urlParams.has('code') || urlParams.has('state') || urlParams.has('authuser');
+    const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
     const isRootPath = window.location.pathname === '/';
-    if (!hasOAuthParams && !isRootPath) return;
+    if (!hasOAuthParams && !isRootPath && !isAuthPage) return;
     let cancelled = false;
     handleRedirectResult()
       .then(() => { /* redirect already done inside handleRedirectResult */ })

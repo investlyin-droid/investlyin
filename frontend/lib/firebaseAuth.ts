@@ -148,9 +148,9 @@ export class FirebaseAuthService {
   }
 
   /**
-   * Sign in with Google using redirect (avoids COOP issues)
+   * Sign in with Google using popup
    */
-  static async signInWithGoogle(): Promise<void> {
+  static async signInWithGoogle(): Promise<UserCredential> {
     if (isFirebaseConfigMissing()) {
       this.throwAsAuthError({
         code: 'auth/configuration-error',
@@ -158,30 +158,28 @@ export class FirebaseAuthService {
       } as AuthError);
     }
     try {
-      if (process.env.NEXT_PUBLIC_DEBUG_AUTH === 'true') console.log('[auth] Initiating Google sign-in redirect...');
+      if (process.env.NEXT_PUBLIC_DEBUG_AUTH === 'true') console.log('[auth] Initiating Google sign-in popup...');
       const provider = new GoogleAuthProvider();
       provider.addScope('email');
       provider.addScope('profile');
-      
+
       // Set custom parameters if needed
       provider.setCustomParameters({
         prompt: 'select_account'
       });
-      
-      // Use redirect instead of popup to avoid Cross-Origin-Opener-Policy issues
-      await signInWithRedirect(auth, provider);
-      // Note: This will redirect the page, so the function won't return normally
-      // The result should be handled via getRedirectResult() after redirect
+
+      // Use popup for better reliability across modern browsers with strict ITP
+      return await signInWithPopup(auth, provider);
     } catch (error: any) {
-      console.error('Google sign-in redirect error:', error);
+      console.error('Google sign-in popup error:', error);
       this.throwAsAuthError(error as AuthError);
     }
   }
 
   /**
-   * Sign in with Apple using redirect (avoids COOP issues)
+   * Sign in with Apple using popup
    */
-  static async signInWithApple(): Promise<void> {
+  static async signInWithApple(): Promise<UserCredential> {
     if (isFirebaseConfigMissing()) {
       this.throwAsAuthError({
         code: 'auth/configuration-error',
@@ -192,10 +190,8 @@ export class FirebaseAuthService {
       const provider = new OAuthProvider('apple.com');
       provider.addScope('email');
       provider.addScope('name');
-      // Use redirect instead of popup to avoid Cross-Origin-Opener-Policy issues
-      await signInWithRedirect(auth, provider);
-      // Note: This will redirect the page, so the function won't return normally
-      // The result should be handled via getRedirectResult() after redirect
+      // Use popup for better reliability
+      return await signInWithPopup(auth, provider);
     } catch (error: any) {
       const authError = error as AuthError;
       this.throwAsAuthError(authError);
@@ -212,17 +208,17 @@ export class FirebaseAuthService {
       return result;
     } catch (error: any) {
       console.error('Error getting redirect result:', error);
-      
+
       // Handle specific sessionStorage error
-      if (error?.code === 'auth/argument-error' || 
-          error?.message?.includes('missing initial state') ||
-          error?.message?.includes('sessionStorage')) {
+      if (error?.code === 'auth/argument-error' ||
+        error?.message?.includes('missing initial state') ||
+        error?.message?.includes('sessionStorage')) {
         if (process.env.NEXT_PUBLIC_DEBUG_AUTH === 'true') console.warn('[auth] SessionStorage error - checking auth state instead');
         // Don't throw - return null and let the caller check auth state
         // This handles cases where sessionStorage is blocked but auth succeeded
         return null;
       }
-      
+
       const authError = error as AuthError;
       console.error('Formatted redirect error:', authError);
       this.throwAsAuthError(authError);
