@@ -60,6 +60,10 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  // Increase body size limits for large image uploads (KYC)
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
   // Gzip compression for faster responses (apply before other middleware)
   app.use(compression());
 

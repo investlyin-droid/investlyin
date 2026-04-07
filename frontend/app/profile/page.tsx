@@ -241,9 +241,9 @@ export default function ProfilePage() {
         }
         try {
             setIsGeneratingApiKey(true);
-            const data = await api.post('/users/api-keys/generate', { 
+            const data = await api.post('/users/api-keys/generate', {
                 name: trimmedName,
-                permissions: apiKeyForm.permissions 
+                permissions: apiKeyForm.permissions
             }, token!);
             setNewApiKey(data.apiKey);
             setApiKeyForm({ name: '', permissions: ['read', 'trade'] });
@@ -298,7 +298,7 @@ export default function ProfilePage() {
                 {/* Mobile menu dropdown */}
                 {mobileMenuOpen && (
                     <>
-                        <div 
+                        <div
                             className="md:hidden fixed inset-0 bg-black/50 z-30"
                             onClick={() => setMobileMenuOpen(false)}
                         />
@@ -347,26 +347,26 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
                     {/* Sidebar */}
                     <aside className="lg:col-span-1 space-y-1 sm:space-y-2">
-                        <SidebarItem 
-                            label="General Settings" 
+                        <SidebarItem
+                            label="General Settings"
                             active={activeSection === 'general'}
                             onClick={() => setActiveSection('general')}
                             icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
                         />
-                        <SidebarItem 
-                            label="Security & 2FA" 
+                        <SidebarItem
+                            label="Security & 2FA"
                             active={activeSection === 'security'}
                             onClick={() => setActiveSection('security')}
                             icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
                         />
-                        <SidebarItem 
-                            label="Verification (KYC)" 
+                        <SidebarItem
+                            label="Verification (KYC)"
                             active={activeSection === 'kyc'}
                             onClick={() => setActiveSection('kyc')}
                             icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
                         />
-                        <SidebarItem 
-                            label="API Connections" 
+                        <SidebarItem
+                            label="API Connections"
                             active={activeSection === 'api'}
                             onClick={() => setActiveSection('api')}
                             icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
@@ -399,13 +399,13 @@ export default function ProfilePage() {
                                             <div>
                                                 <p className="text-sm sm:text-base font-semibold text-white">Account Verified</p>
                                                 <p className="text-xs sm:text-sm text-brand-text-secondary">
-                                                KYC: {profileData?.kycStatus 
-                                                    ? profileData.kycStatus === 'approved' ? '✓ Approved' 
-                                                    : profileData.kycStatus === 'pending' ? '⏳ Pending Review'
-                                                    : profileData.kycStatus === 'rejected' ? '✗ Rejected'
-                                                    : String(profileData.kycStatus).toUpperCase()
-                                                    : 'Not submitted'}
-                                            </p>
+                                                    KYC: {profileData?.kycStatus
+                                                        ? profileData.kycStatus === 'approved' ? '✓ Approved'
+                                                            : profileData.kycStatus === 'pending' ? '⏳ Pending Review'
+                                                                : profileData.kycStatus === 'rejected' ? '✗ Rejected'
+                                                                    : String(profileData.kycStatus).toUpperCase()
+                                                        : 'Not submitted'}
+                                                </p>
                                             </div>
                                         </div>
                                         <span className="badge badge-success text-xs sm:text-sm">Active</span>
@@ -435,7 +435,7 @@ export default function ProfilePage() {
                                             </div>
                                             {profileData?.twoFactorEnabled ? (
                                                 <div className="flex gap-2">
-                                                    <button 
+                                                    <button
                                                         onClick={async () => {
                                                             if (!window.confirm('Are you sure you want to disable 2FA? This will remove the extra security layer from your account.')) return;
                                                             try {
@@ -453,7 +453,7 @@ export default function ProfilePage() {
                                                     >
                                                         Disable
                                                     </button>
-                                                    <button 
+                                                    <button
                                                         onClick={() => { setShow2FAModal(true); setTwoFAQRCode(null); }}
                                                         className="px-4 sm:px-6 py-2 bg-brand-gold/20 hover:bg-brand-gold/30 text-brand-gold rounded-lg font-semibold text-xs sm:text-sm transition-colors"
                                                     >
@@ -461,7 +461,7 @@ export default function ProfilePage() {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <button 
+                                                <button
                                                     onClick={() => { setShow2FAModal(true); setTwoFAQRCode(null); }}
                                                     className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-brand-gold/20 hover:bg-brand-gold/30 text-brand-gold rounded-lg font-semibold text-xs sm:text-sm transition-colors"
                                                 >
@@ -481,7 +481,7 @@ export default function ProfilePage() {
                                                     <p className="text-xs sm:text-sm text-brand-text-secondary">Update your account password</p>
                                                 </div>
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={() => setShowPasswordModal(true)}
                                                 className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold text-xs sm:text-sm transition-colors"
                                             >
@@ -545,7 +545,7 @@ export default function ProfilePage() {
                                                 <p className="text-xs sm:text-sm text-brand-text-secondary mb-3 sm:mb-4">
                                                     Your verification was rejected. Please ensure your documents are clear and valid, then resubmit.
                                                 </p>
-                                                <button 
+                                                <button
                                                     onClick={() => setShowKYCModal(true)}
                                                     className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-brand-gold text-brand-obsidian rounded-lg font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity"
                                                 >
@@ -568,7 +568,7 @@ export default function ProfilePage() {
                                                 <p className="text-xs sm:text-sm text-brand-text-secondary mb-3 sm:mb-4">
                                                     KYC verification helps us ensure the security of your account and comply with regulatory requirements.
                                                 </p>
-                                                <button 
+                                                <button
                                                     onClick={() => setShowKYCModal(true)}
                                                     className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-brand-gold text-brand-obsidian rounded-lg font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity"
                                                 >
@@ -601,7 +601,7 @@ export default function ProfilePage() {
                                             <p className="text-xs sm:text-sm text-brand-text-secondary mb-3 sm:mb-4">
                                                 Generate API keys to connect your trading applications and automate your trading strategies.
                                             </p>
-                                            <button 
+                                            <button
                                                 onClick={() => setShowApiKeyModal(true)}
                                                 className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-brand-gold/20 hover:bg-brand-gold/30 text-brand-gold rounded-lg font-semibold text-xs sm:text-sm transition-colors mb-3 sm:mb-4"
                                             >
@@ -659,14 +659,14 @@ export default function ProfilePage() {
                                 <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} className="w-full input-field rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm" />
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:space-x-4 pt-3 sm:pt-4">
-                                <button 
-                                    onClick={() => { setShowPasswordModal(false); setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' }); }} 
+                                <button
+                                    onClick={() => { setShowPasswordModal(false); setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' }); }}
                                     className="flex-1 py-2.5 sm:py-3 bg-white/5 hover:bg-white/10 rounded-lg font-semibold text-sm transition-colors"
                                     disabled={isChangingPassword}
                                 >
                                     Cancel
                                 </button>
-                                <button 
+                                <button
                                     onClick={handlePasswordChange}
                                     disabled={isChangingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
                                     className="flex-1 btn-primary py-2.5 sm:py-3 rounded-lg font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -699,8 +699,8 @@ export default function ProfilePage() {
                                     <p className="text-[10px] sm:text-xs text-brand-text-secondary mb-3 sm:mb-4">Enter the 6-digit code from your authenticator app to complete setup:</p>
                                     <div>
                                         <label className="block text-xs sm:text-sm font-semibold text-white mb-1.5 sm:mb-2">Verification Code</label>
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={twoFACode}
                                             onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                             placeholder="000000"
@@ -710,13 +710,13 @@ export default function ProfilePage() {
                                         />
                                     </div>
                                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:space-x-4 pt-2">
-                                        <button 
-                                            onClick={() => { setShow2FAModal(false); setTwoFAQRCode(null); setTwoFACode(''); }} 
+                                        <button
+                                            onClick={() => { setShow2FAModal(false); setTwoFAQRCode(null); setTwoFACode(''); }}
                                             className="flex-1 py-2.5 sm:py-3 bg-white/5 hover:bg-white/10 rounded-lg font-semibold text-sm transition-colors"
                                         >
                                             Cancel
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={handle2FAVerify}
                                             disabled={isVerifying2FA || twoFACode.length !== 6}
                                             className="flex-1 btn-primary py-2.5 sm:py-3 rounded-lg font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -730,7 +730,7 @@ export default function ProfilePage() {
                                     <p className="text-xs sm:text-sm text-brand-text-secondary">Two-factor authentication adds an extra layer of security to your account.</p>
                                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:space-x-4 pt-3 sm:pt-4">
                                         <button onClick={() => { setShow2FAModal(false); setTwoFAQRCode(null); setTwoFACode(''); }} className="flex-1 py-2.5 sm:py-3 bg-white/5 hover:bg-white/10 rounded-lg font-semibold text-sm transition-colors">Cancel</button>
-                                        <button 
+                                        <button
                                             onClick={handle2FASetup}
                                             disabled={isSubmitting}
                                             className="flex-1 btn-primary py-2.5 sm:py-3 rounded-lg font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -758,9 +758,9 @@ export default function ProfilePage() {
                         <div className="space-y-3 sm:space-y-4">
                             <div>
                                 <label className="block text-xs sm:text-sm font-semibold text-white mb-1.5 sm:mb-2">Document Type <span className="text-brand-red">*</span></label>
-                                <select 
-                                    value={kycForm.documentType} 
-                                    onChange={e => setKycForm({ ...kycForm, documentType: e.target.value })} 
+                                <select
+                                    value={kycForm.documentType}
+                                    onChange={e => setKycForm({ ...kycForm, documentType: e.target.value })}
                                     className="w-full input-field rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm"
                                     required
                                 >
@@ -772,11 +772,11 @@ export default function ProfilePage() {
                             </div>
                             <div>
                                 <label className="block text-xs sm:text-sm font-semibold text-white mb-1.5 sm:mb-2">Document Number <span className="text-brand-red">*</span></label>
-                                <input 
-                                    type="text" 
-                                    value={kycForm.documentNumber} 
-                                    onChange={e => setKycForm({ ...kycForm, documentNumber: e.target.value })} 
-                                    className="w-full input-field rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm" 
+                                <input
+                                    type="text"
+                                    value={kycForm.documentNumber}
+                                    onChange={e => setKycForm({ ...kycForm, documentNumber: e.target.value })}
+                                    className="w-full input-field rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm"
                                     placeholder="Enter document number"
                                     required
                                 />
@@ -784,8 +784,8 @@ export default function ProfilePage() {
                             <div>
                                 <label className="block text-xs sm:text-sm font-semibold text-white mb-1.5 sm:mb-2">Document Image <span className="text-brand-red">*</span></label>
                                 <div className="space-y-2 sm:space-y-3">
-                                    <input 
-                                        type="file" 
+                                    <input
+                                        type="file"
                                         accept="image/*"
                                         onChange={handleKYCFileChange}
                                         className="w-full input-field rounded-lg px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm file:mr-2 sm:file:mr-4 file:py-1 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-lg file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-brand-gold/20 file:text-brand-gold hover:file:bg-brand-gold/30"
@@ -796,17 +796,24 @@ export default function ProfilePage() {
                                             <img src={kycPreview} alt="Document preview" className="max-w-full h-32 sm:h-40 md:h-48 object-contain rounded-lg border border-white/10" />
                                         </div>
                                     )}
-                                    <p className="text-[10px] sm:text-xs text-brand-text-secondary">Accepted formats: JPG, PNG, PDF (Max 5MB)</p>
+                                    <div className="bg-brand-gold/10 border border-brand-gold/20 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-brand-gold mb-1">💡 Pro Tip for Fast Verification</p>
+                                        <p className="text-[10px] leading-relaxed text-brand-text-secondary">
+                                            To avoid upload errors, please use a <b>compressed or low-size image</b> (under 5MB). Most phone photos work best when sent as "Small" or "Medium" size.
+                                        </p>
+                                    </div>
+                                    <p className="text-[10px] sm:text-xs text-brand-text-secondary">Accepted formats: JPG, PNG (Max 5MB)</p>
+
                                 </div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:space-x-4 pt-3 sm:pt-4">
-                                <button 
-                                    onClick={() => { setShowKYCModal(false); setKycForm({ documentType: '', documentNumber: '', documentImage: null }); setKycPreview(null); }} 
+                                <button
+                                    onClick={() => { setShowKYCModal(false); setKycForm({ documentType: '', documentNumber: '', documentImage: null }); setKycPreview(null); }}
                                     className="flex-1 py-2.5 sm:py-3 bg-white/5 hover:bg-white/10 rounded-lg font-semibold text-sm transition-colors"
                                 >
                                     Cancel
                                 </button>
-                                <button 
+                                <button
                                     onClick={handleKYCSubmit}
                                     disabled={isSubmittingKYC || !kycForm.documentType || !kycForm.documentNumber || !kycForm.documentImage}
                                     className="flex-1 btn-primary py-2.5 sm:py-3 rounded-lg font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -863,13 +870,13 @@ export default function ProfilePage() {
                                         </div>
                                         <p className="text-xs text-brand-red mt-2">⚠️ This key will not be shown again. Please save it now.</p>
                                     </div>
-                                    <button 
-                                        onClick={() => { 
-                                            setShowApiKeyModal(false); 
-                                            setApiKeyForm({ name: '', permissions: ['read', 'trade'] }); 
+                                    <button
+                                        onClick={() => {
+                                            setShowApiKeyModal(false);
+                                            setApiKeyForm({ name: '', permissions: ['read', 'trade'] });
                                             setNewApiKey(null);
                                             setCopiedApiKey(false);
-                                        }} 
+                                        }}
                                         className="w-full btn-primary py-3 rounded-lg font-semibold"
                                     >
                                         I've Saved It
@@ -912,14 +919,14 @@ export default function ProfilePage() {
                                         )}
                                     </div>
                                     <div className="flex space-x-4 pt-4">
-                                        <button 
-                                            onClick={() => { setShowApiKeyModal(false); setApiKeyForm({ name: '', permissions: ['read', 'trade'] }); }} 
+                                        <button
+                                            onClick={() => { setShowApiKeyModal(false); setApiKeyForm({ name: '', permissions: ['read', 'trade'] }); }}
                                             className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-lg font-semibold transition-colors"
                                             disabled={isGeneratingApiKey}
                                         >
                                             Cancel
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={handleGenerateApiKey}
                                             disabled={isGeneratingApiKey || !apiKeyForm.name.trim() || apiKeyForm.permissions.length === 0}
                                             className="flex-1 btn-primary py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
@@ -941,11 +948,10 @@ function SidebarItem({ label, active, onClick, icon }: { label: string; active?:
     return (
         <button
             onClick={onClick}
-            className={`w-full text-left px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all border flex items-center space-x-2 sm:space-x-3 ${
-                active 
-                    ? 'bg-brand-gold/10 border-brand-gold/30 text-brand-gold' 
+            className={`w-full text-left px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all border flex items-center space-x-2 sm:space-x-3 ${active
+                    ? 'bg-brand-gold/10 border-brand-gold/30 text-brand-gold'
                     : 'bg-transparent border-transparent text-brand-text-secondary hover:bg-white/5 hover:text-white'
-            }`}
+                }`}
         >
             <span className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0">{icon}</span>
             <span className="truncate">{label}</span>
