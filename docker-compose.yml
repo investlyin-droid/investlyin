@@ -8,12 +8,8 @@ services:
     environment:
       PORT: "3000"
       NODE_ENV: production
-      MONGO_URI: mongodb://admin:securepassword123@mongo:27017/trading?authSource=admin
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: securepassword123
-      # Local Docker: allow browser at localhost:3000. For production override with ALLOWED_ORIGINS=https://yourdomain.com
-      ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      # Env variables will be loaded from .env file via docker-compose.prod.yml
+
     depends_on:
       - mongo
       - redis
