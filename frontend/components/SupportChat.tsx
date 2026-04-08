@@ -116,8 +116,8 @@ export default function SupportChat() {
 
             {/* Chat Menu / Widget Window */}
             {isOpen && (
-                <div className="absolute bottom-16 right-0 w-[350px] animate-scale-up origin-bottom-right">
-                    <div className="bg-brand-obsidian border border-white/10 rounded-[24px] shadow-2xl overflow-hidden glass-panel flex flex-col h-[500px]">
+                <div className="absolute bottom-16 right-0 w-[320px] sm:w-[350px] animate-scale-up origin-bottom-right">
+                    <div className="bg-[#0B0E11] border border-white/10 rounded-[20px] shadow-2xl overflow-hidden flex flex-col h-[420px] sm:h-[480px]">
                         {/* Header */}
                         <div className="p-4 bg-gradient-to-r from-brand-gold/10 to-transparent flex items-center gap-3 border-b border-white/5 shrink-0">
                             <div className="w-8 h-8 rounded-lg bg-brand-gold/20 flex items-center justify-center text-brand-gold">
