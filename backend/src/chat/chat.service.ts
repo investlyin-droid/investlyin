@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ChatMessage, ChatMessageDocument } from './schemas/chat-message.schema';
+import { FirestoreUsersService } from '../users/firestore-users.service';
 
 @Injectable()
 export class ChatService {
     constructor(
         @InjectModel(ChatMessage.name)
         private chatMessageModel: Model<ChatMessageDocument>,
+        private usersService: FirestoreUsersService,
     ) { }
 
     async saveMessage(senderId: string, receiverId: string, content: string, isAdmin = false) {
@@ -34,7 +36,7 @@ export class ChatService {
     }
 
     async getAdminRecentChats() {
-        // Get distinct userIds who chatted with ADMIN
+        // Get distinct userIds who chatted with ADMIN from MongoDB
         const recentMessages = await this.chatMessageModel.aggregate([
             {
                 $match: {
@@ -72,41 +74,29 @@ export class ChatService {
                 },
             },
             {
-                $addFields: {
-                    userIdObj: {
-                        $cond: [
-                            { $strcasecmp: ["$_id", "ADMIN"] }, // Check if not 'ADMIN'
-                            { $toObjectId: "$_id" },
-                            null
-                        ]
-                    }
-                }
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'userIdObj',
-                    foreignField: '_id',
-                    as: 'user',
-                },
-            },
-            {
-                $unwind: { path: '$user', preserveNullAndEmptyArrays: true },
-            },
-            {
-                $addFields: {
-                    userEmail: '$user.email',
-                    userName: { $concat: ['$user.firstName', ' ', '$user.lastName'] },
-                },
-            },
-            {
-                $project: { user: 0, userIdObj: 0 },
-            },
-            {
                 $sort: { lastTimestamp: -1 },
             },
         ]);
-        return recentMessages;
+
+        // Augment each chat entry with Firestore profile data
+        const enriched = await Promise.all(
+            recentMessages.map(async (chat) => {
+                if (!chat._id || chat._id === 'ADMIN') return chat;
+                try {
+                    const user = await this.usersService.findById(chat._id);
+                    return {
+                        ...chat,
+                        userName: user ? `${user.firstName} ${user.lastName}` : 'User ' + chat._id.slice(-4),
+                        userEmail: user?.email || '',
+                    };
+                } catch (err) {
+                    console.error('Failed to fetch user from Firestore', chat._id, err);
+                    return chat;
+                }
+            })
+        );
+
+        return enriched;
     }
 
     async markAsRead(userId: string, readerType: 'ADMIN' | 'USER') {

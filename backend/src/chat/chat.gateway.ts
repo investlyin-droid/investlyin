@@ -51,7 +51,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const senderId = user.isAdmin ? 'ADMIN' : user.userId;
         const receiverId = user.isAdmin ? (data.targetUserId || '') : 'ADMIN';
 
-        if (!data.content || !senderId) return; // Guard clause
+        if (!data.content || !senderId || !receiverId) return; // Guard clause
 
         const message = await this.chatService.saveMessage(senderId, receiverId, data.content, user.isAdmin);
 
