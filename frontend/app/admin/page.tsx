@@ -110,6 +110,11 @@ export default function AdminPage() {
     const [chatInputValue, setChatInputValue] = useState('');
     const [chatSocket, setChatSocket] = useState<any>(null);
     const chatScrollRef = useRef<HTMLDivElement>(null);
+    const selectedChatUserIdRef = useRef<string | null>(null);
+
+    useEffect(() => {
+        selectedChatUserIdRef.current = selectedChatUserId;
+    }, [selectedChatUserId]);
     const [allOrders, setAllOrders] = useState<any[]>([]);
     const [userOrders, setUserOrders] = useState<any[]>([]);
     const [showOrdersModal, setShowOrdersModal] = useState(false);
@@ -647,7 +652,7 @@ export default function AdminPage() {
             loadRecentChats();
             // If message is for/from currently selected user, append to messages
             setChatMessages((prev) => {
-                const isRelevant = msg.senderId === selectedChatUserId || msg.receiverId === selectedChatUserId;
+                const isRelevant = msg.senderId === selectedChatUserIdRef.current || msg.receiverId === selectedChatUserIdRef.current;
                 if (isRelevant) {
                     return [...prev, msg];
                 }
@@ -666,7 +671,7 @@ export default function AdminPage() {
         return () => {
             sc.disconnect();
         };
-    }, [token, activeTab, selectedChatUserId, loadRecentChats]);
+    }, [token, activeTab, loadRecentChats]);
 
     // Auto-scroll chat
     useEffect(() => {

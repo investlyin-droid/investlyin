@@ -24,7 +24,7 @@ export class WsJwtGuard implements CanActivate {
                 userId: payload.sub,
                 email: payload.email,
                 role: payload.role,
-                isAdmin: payload.role === 'admin',
+                isAdmin: payload.role === 'admin' || payload.role === 'super_admin',
             };
             return true;
         } catch (e) {

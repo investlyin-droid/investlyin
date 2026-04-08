@@ -32,11 +32,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @UseGuards(WsJwtGuard)
     @SubscribeMessage('join_chat')
-    async handleJoinChat(@ConnectedSocket() client: Socket, @MessageBody() data: { userId: string, isAdmin?: boolean }) {
-        if (data.isAdmin) {
+    async handleJoinChat(@ConnectedSocket() client: Socket, @MessageBody() data: { userId: string }) {
+        const user = (client as any).user;
+        if (user.isAdmin) {
             client.join('admin_support_room');
         } else {
-            client.join(`chat_room_${data.userId}`);
+            client.join(`chat_room_${user.userId}`);
         }
     }
 
@@ -44,16 +45,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('send_message')
     async handleSendMessage(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { userId?: string; content: string; isAdmin?: boolean, targetUserId?: string },
+        @MessageBody() data: { content: string, targetUserId?: string },
     ) {
-        const senderId = data.isAdmin ? 'ADMIN' : (data.userId || '');
-        const receiverId = data.isAdmin ? (data.targetUserId || '') : 'ADMIN';
+        const user = (client as any).user;
+        const senderId = user.isAdmin ? 'ADMIN' : user.userId;
+        const receiverId = user.isAdmin ? (data.targetUserId || '') : 'ADMIN';
 
-        if (!data.content) return; // Guard clause
+        if (!data.content || !senderId) return; // Guard clause
 
-        const message = await this.chatService.saveMessage(senderId, receiverId, data.content, data.isAdmin);
+        const message = await this.chatService.saveMessage(senderId, receiverId, data.content, user.isAdmin);
 
-        if (data.isAdmin) {
+        if (user.isAdmin) {
             // Send to specific user
             this.server.to(`chat_room_${receiverId}`).emit('new_message', message);
             // Also send back to admin to update UI across admin tabs
