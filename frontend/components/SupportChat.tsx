@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import {
     MessageCircle,
@@ -158,8 +160,8 @@ export default function SupportChat() {
                                             className={`flex ${!isAdminMsg ? 'justify-end' : 'justify-start'}`}
                                         >
                                             <div className={`max-w-[80%] p-3 rounded-2xl text-[11px] font-medium leading-relaxed ${!isAdminMsg
-                                                    ? 'bg-brand-gold text-brand-obsidian rounded-tr-none'
-                                                    : 'bg-white/10 text-white border border-white/5 rounded-tl-none'
+                                                ? 'bg-brand-gold text-brand-obsidian rounded-tr-none'
+                                                : 'bg-white/10 text-white border border-white/5 rounded-tl-none'
                                                 }`}>
                                                 {msg.content}
                                                 <div className={`text-[8px] mt-1 opacity-50 ${!isAdminMsg ? 'text-right' : 'text-left'}`}>
