@@ -24,6 +24,20 @@ const FALLBACK_CRYPTO_NETWORKS = [
     { id: 'USDT-ERC20', label: 'USDT (ERC-20)', explorerName: 'Etherscan' },
     { id: 'USDT-TRC20', label: 'USDT (TRC-20)', explorerName: 'Tronscan' },
 ];
+
+const TRANSACTION_TYPE_LABELS: Record<string, string> = {
+    'ADMIN_ADJUSTMENT': 'Deposit',
+    'COMMISSION': 'Bid',
+    'DEPOSIT': 'Deposit',
+    'WITHDRAWAL': 'Withdrawal',
+    'PROFIT_LOSS': 'P/L',
+    'TRANSFER': 'Transfer'
+};
+
+const formatTransactionType = (type: string) => {
+    return TRANSACTION_TYPE_LABELS[type] || type.replace('_', ' ');
+};
+
 const WITHDRAW_MIN = 10;
 const WITHDRAW_MAX = 500000;
 
@@ -267,7 +281,7 @@ export default function WalletPage() {
         const headers = ['Date & Time', 'Type', 'Description', 'Amount', 'Balance After'];
         const rows = historyArray.map(h => [
             new Date(h.createdAt).toLocaleString(),
-            h.type.replace('_', ' '),
+            formatTransactionType(h.type),
             h.description || '-',
             h.amount >= 0 ? `+$${Math.abs(h.amount).toFixed(2)}` : `-$${Math.abs(h.amount).toFixed(2)}`,
             `$${h.balanceAfter?.toFixed(2) || '0.00'}`
@@ -529,7 +543,7 @@ export default function WalletPage() {
                                             <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 font-mono text-[10px] sm:text-xs text-white">{new Date(h.createdAt).toLocaleString()}</td>
                                             <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
                                                 <span className={`badge text-[10px] sm:text-xs ${h.type === 'DEPOSIT' || h.type === 'ADMIN_ADJUSTMENT' ? 'badge-success' : h.type === 'WITHDRAWAL' ? 'badge-danger' : 'badge-info'}`}>
-                                                    {h.type.replace('_', ' ')}
+                                                    {formatTransactionType(h.type)}
                                                 </span>
                                             </td>
                                             <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-brand-text-secondary text-[10px] sm:text-xs hidden sm:table-cell">{h.description || '-'}</td>

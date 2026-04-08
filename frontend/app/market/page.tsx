@@ -33,8 +33,8 @@ export default function MarketPage() {
     useEffect(() => {
         if (token) {
             // Load wallet and open trades for real-time equity calculation
-            api.get('/wallet', token).then(setWallet).catch(() => {});
-            api.get('/trades/my-trades/open', token).then((data) => setOpenTrades(Array.isArray(data) ? data : [])).catch(() => {});
+            api.get('/wallet', token).then(setWallet).catch(() => { });
+            api.get('/trades/my-trades/open', token).then((data) => setOpenTrades(Array.isArray(data) ? data : [])).catch(() => { });
         }
     }, [token]);
 
@@ -46,14 +46,14 @@ export default function MarketPage() {
             setWallet((w: any) => (w ? { ...w, balance: data.balance, currency: data.currency } : { balance: data.balance, currency: data.currency }));
             // Reload open trades when balance updates (trade might have closed)
             if (token) {
-                api.get('/trades/my-trades/open', token).then((data) => setOpenTrades(Array.isArray(data) ? data : [])).catch(() => {});
+                api.get('/trades/my-trades/open', token).then((data) => setOpenTrades(Array.isArray(data) ? data : [])).catch(() => { });
             }
         },
         onTradeClosed: () => {
             // Reload wallet and trades when a trade is closed
             if (token) {
-                api.get('/wallet', token).then(setWallet).catch(() => {});
-                api.get('/trades/my-trades/open', token).then((data) => setOpenTrades(Array.isArray(data) ? data : [])).catch(() => {});
+                api.get('/wallet', token).then(setWallet).catch(() => { });
+                api.get('/trades/my-trades/open', token).then((data) => setOpenTrades(Array.isArray(data) ? data : [])).catch(() => { });
             }
         },
     });
@@ -64,32 +64,32 @@ export default function MarketPage() {
     // Helper function to categorize symbols
     const getSymbolCategory = useCallback((symbol: string): 'forex' | 'metals' | 'crypto' | 'energies' | 'stocks' | 'indices' => {
         const sym = symbol.toUpperCase();
-        
+
         // Metals
         if (sym.startsWith('XAU') || sym.startsWith('XAG') || sym.startsWith('XPT') || sym.startsWith('XPD')) {
             return 'metals';
         }
-        
+
         // Cryptocurrencies
         if (['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'XRP', 'DOT', 'DOGE', 'MATIC', 'LINK', 'AVAX', 'UNI'].some(c => sym.includes(c))) {
             return 'crypto';
         }
-        
+
         // Energies
         if (sym.includes('OIL') || sym.includes('GAS') || sym.includes('CRUDE') || sym.includes('BRENT') || sym.includes('WTI')) {
             return 'energies';
         }
-        
+
         // Stocks (common stock symbols)
         if (['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC'].some(s => sym.includes(s))) {
             return 'stocks';
         }
-        
+
         // Indices
         if (sym.includes('SPX') || sym.includes('NAS') || sym.includes('DJI') || sym.includes('FTSE') || sym.includes('DAX') || sym.includes('NIKKEI')) {
             return 'indices';
         }
-        
+
         // Default to Forex
         return 'forex';
     }, []);
@@ -97,27 +97,27 @@ export default function MarketPage() {
     // Filter and sort prices
     const filteredAndSortedPrices = useCallback(() => {
         if (!Array.isArray(prices) || prices.length === 0) return [];
-        
+
         let filtered = prices.filter((price: any) => {
             // Category filter
             if (marketCategory !== 'all') {
                 const category = getSymbolCategory(price.symbol);
                 if (category !== marketCategory) return false;
             }
-            
+
             // Search filter
             if (searchQuery) {
                 const query = searchQuery.toUpperCase();
                 if (!price.symbol.toUpperCase().includes(query)) return false;
             }
-            
+
             return true;
         });
 
         // Sort
         filtered.sort((a: any, b: any) => {
             let aValue: any, bValue: any;
-            
+
             switch (sortBy) {
                 case 'symbol':
                     aValue = a.symbol;
@@ -136,7 +136,7 @@ export default function MarketPage() {
                 default:
                     return 0;
             }
-            
+
             if (sortOrder === 'asc') {
                 return aValue > bValue ? 1 : -1;
             } else {
@@ -160,6 +160,13 @@ export default function MarketPage() {
         if (category === 'indices') return price.toFixed(2);
         return price.toFixed(5);
     }, [getSymbolCategory]);
+
+    const getSymbolLogo = useCallback((symbol: string) => {
+        const s = symbol.split('.')[0].toLowerCase();
+        // TradingView logo API pattern
+        return `https://s3-symbol-logo.tradingview.com/${s}--big.svg`;
+    }, []);
+
 
     if (isLoading) {
         return (
@@ -232,7 +239,7 @@ export default function MarketPage() {
                 {/* Mobile menu dropdown */}
                 {mobileMenuOpen && (
                     <>
-                        <div 
+                        <div
                             className="md:hidden fixed inset-0 bg-black/50 z-30"
                             onClick={() => setMobileMenuOpen(false)}
                         ></div>
@@ -328,7 +335,7 @@ export default function MarketPage() {
                                     className="w-full input-field rounded-lg sm:rounded-xl px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-brand-surface/60 border border-white/20 focus:border-brand-gold/50"
                                 />
                             </div>
-                            
+
                             {/* Sort */}
                             <div className="flex gap-2">
                                 <select
@@ -367,11 +374,10 @@ export default function MarketPage() {
                                     <button
                                         key={cat.id}
                                         onClick={() => setMarketCategory(cat.id as any)}
-                                        className={`px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all whitespace-nowrap ${
-                                            marketCategory === cat.id
-                                                ? 'bg-brand-gold/20 text-brand-gold border-2 border-brand-gold/50 shadow-lg'
-                                                : 'text-brand-text-secondary hover:text-white hover:bg-white/5 border-2 border-transparent'
-                                        }`}
+                                        className={`px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all whitespace-nowrap ${marketCategory === cat.id
+                                            ? 'bg-brand-gold/20 text-brand-gold border-2 border-brand-gold/50 shadow-lg'
+                                            : 'text-brand-text-secondary hover:text-white hover:bg-white/5 border-2 border-transparent'
+                                            }`}
                                     >
                                         {cat.label} ({cat.count})
                                     </button>
@@ -409,7 +415,7 @@ export default function MarketPage() {
                                     const change = ((price.ask - price.bid) / price.bid) * 100;
                                     const spread = price.ask - price.bid;
                                     const category = getSymbolCategory(price.symbol);
-                                    
+
                                     return (
                                         <div
                                             key={price.symbol}
@@ -419,15 +425,24 @@ export default function MarketPage() {
                                             <div className="md:hidden space-y-2">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-white/5 overflow-hidden flex-shrink-0 border border-white/10">
+                                                            <img
+                                                                src={getSymbolLogo(price.symbol)}
+                                                                alt=""
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                                }}
+                                                            />
+                                                        </div>
                                                         <span className="text-base font-bold text-white">{price.symbol}</span>
-                                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                                                            category === 'forex' ? 'bg-blue-500/20 text-blue-400' :
+                                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${category === 'forex' ? 'bg-blue-500/20 text-blue-400' :
                                                             category === 'metals' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                            category === 'crypto' ? 'bg-purple-500/20 text-purple-400' :
-                                                            category === 'energies' ? 'bg-orange-500/20 text-orange-400' :
-                                                            category === 'stocks' ? 'bg-green-500/20 text-green-400' :
-                                                            'bg-pink-500/20 text-pink-400'
-                                                        }`}>
+                                                                category === 'crypto' ? 'bg-purple-500/20 text-purple-400' :
+                                                                    category === 'energies' ? 'bg-orange-500/20 text-orange-400' :
+                                                                        category === 'stocks' ? 'bg-green-500/20 text-green-400' :
+                                                                            'bg-pink-500/20 text-pink-400'
+                                                            }`}>
                                                             {category.toUpperCase()}
                                                         </span>
                                                     </div>
@@ -462,16 +477,25 @@ export default function MarketPage() {
                                             {/* Desktop Table Layout */}
                                             <div className="hidden md:contents">
                                                 <div className="flex items-center">
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-6 h-6 rounded-full bg-white/5 overflow-hidden flex-shrink-0 border border-white/10">
+                                                            <img
+                                                                src={getSymbolLogo(price.symbol)}
+                                                                alt=""
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                                }}
+                                                            />
+                                                        </div>
                                                         <span className="text-sm font-bold text-white">{price.symbol}</span>
-                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${
-                                                            category === 'forex' ? 'bg-blue-500/20 text-blue-400' :
+                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${category === 'forex' ? 'bg-blue-500/20 text-blue-400' :
                                                             category === 'metals' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                            category === 'crypto' ? 'bg-purple-500/20 text-purple-400' :
-                                                            category === 'energies' ? 'bg-orange-500/20 text-orange-400' :
-                                                            category === 'stocks' ? 'bg-green-500/20 text-green-400' :
-                                                            'bg-pink-500/20 text-pink-400'
-                                                        }`}>
+                                                                category === 'crypto' ? 'bg-purple-500/20 text-purple-400' :
+                                                                    category === 'energies' ? 'bg-orange-500/20 text-orange-400' :
+                                                                        category === 'stocks' ? 'bg-green-500/20 text-green-400' :
+                                                                            'bg-pink-500/20 text-pink-400'
+                                                            }`}>
                                                             {category.charAt(0).toUpperCase() + category.slice(1)}
                                                         </span>
                                                     </div>
