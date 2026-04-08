@@ -42,6 +42,11 @@ export default function SupportChat() {
             setMessages((prev) => [...prev, msg]);
         });
 
+        newSocket.on('messages_read', ({ userId, readerType }) => {
+            // Logic to update local message read status if needed
+            // For now, we just refresh the local state if the user was looking at it
+        });
+
         setSocket(newSocket);
 
         return () => {

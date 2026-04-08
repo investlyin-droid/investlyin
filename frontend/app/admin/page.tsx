@@ -655,6 +655,12 @@ export default function AdminPage() {
             });
         });
 
+        sc.on('messages_read', ({ userId, readerType }) => {
+            if (readerType === 'ADMIN') {
+                loadRecentChats(); // Refresh unread counts
+            }
+        });
+
         setChatSocket(sc);
 
         return () => {
@@ -3224,9 +3230,16 @@ export default function AdminPage() {
                                                     }`}
                                             >
                                                 <div className="flex justify-between items-start">
-                                                    <span className="text-xs font-bold truncate text-white">
-                                                        {chat.userEmail || (chat._id ? chat._id.slice(-8) : 'Unknown User')}
-                                                    </span>
+                                                    <div className="flex flex-col truncate">
+                                                        <span className="text-xs font-bold text-white truncate">
+                                                            {chat.userName || chat.userEmail || (chat._id ? chat._id.slice(-8) : 'Unknown User')}
+                                                        </span>
+                                                        {(chat.userName || chat.userEmail) && (
+                                                            <span className="text-[9px] text-brand-text-secondary truncate">
+                                                                {chat.userName ? chat.userEmail : chat._id.slice(-8)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     {chat.unreadCount > 0 && (
                                                         <span className="bg-brand-gold text-brand-obsidian text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                                                             {chat.unreadCount}

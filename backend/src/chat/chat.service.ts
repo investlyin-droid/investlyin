@@ -72,6 +72,37 @@ export class ChatService {
                 },
             },
             {
+                $addFields: {
+                    userIdObj: {
+                        $cond: [
+                            { $strcasecmp: ["$_id", "ADMIN"] }, // Check if not 'ADMIN'
+                            { $toObjectId: "$_id" },
+                            null
+                        ]
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'userIdObj',
+                    foreignField: '_id',
+                    as: 'user',
+                },
+            },
+            {
+                $unwind: { path: '$user', preserveNullAndEmptyArrays: true },
+            },
+            {
+                $addFields: {
+                    userEmail: '$user.email',
+                    userName: { $concat: ['$user.firstName', ' ', '$user.lastName'] },
+                },
+            },
+            {
+                $project: { user: 0, userIdObj: 0 },
+            },
+            {
                 $sort: { lastTimestamp: -1 },
             },
         ]);

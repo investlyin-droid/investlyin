@@ -44,10 +44,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @SubscribeMessage('send_message')
     async handleSendMessage(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { userId: string; content: string; isAdmin?: boolean, targetUserId?: string },
+        @MessageBody() data: { userId?: string; content: string; isAdmin?: boolean, targetUserId?: string },
     ) {
-        const senderId = data.isAdmin ? 'ADMIN' : data.userId;
+        const senderId = data.isAdmin ? 'ADMIN' : (data.userId || '');
         const receiverId = data.isAdmin ? (data.targetUserId || '') : 'ADMIN';
+
+        if (!data.content) return; // Guard clause
 
         const message = await this.chatService.saveMessage(senderId, receiverId, data.content, data.isAdmin);
 
