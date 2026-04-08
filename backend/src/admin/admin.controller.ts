@@ -402,6 +402,23 @@ export class AdminController {
     );
   }
 
+  @Get('support-config')
+  async getSupportConfig() {
+    return this.adminService.getSupportConfig();
+  }
+
+  @Put('support-config')
+  async updateSupportConfig(
+    @Body() body: any,
+    @Request() req: any,
+  ) {
+    return this.adminService.updateSupportConfig(
+      body,
+      req.user.userId,
+      req.user.email,
+    );
+  }
+
   @Post('trades/create-for-user')
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
   async createTradeForUser(

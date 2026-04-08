@@ -4,9 +4,10 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import Preconnect from "@/components/Preconnect";
+import SupportChat from "@/components/SupportChat";
 
 // Optimize font loading with display swap to prevent layout shift
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   preload: true,
@@ -37,6 +38,7 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             {children}
+            <SupportChat />
           </ToastProvider>
         </AuthProvider>
       </body>

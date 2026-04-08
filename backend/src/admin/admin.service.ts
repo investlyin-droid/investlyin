@@ -11,6 +11,10 @@ import {
   PaymentConfig,
   PaymentConfigDocument,
 } from './schemas/payment-config.schema';
+import {
+  SupportConfig,
+  SupportConfigDocument,
+} from './schemas/support-config.schema';
 import { Trade, TradeDocument } from '../trade/schemas/trade.schema';
 import { TradeService } from '../trade/trade.service';
 import { TradeGateway } from '../trade/trade.gateway';
@@ -31,6 +35,8 @@ export class AdminService {
     private liquidityRuleModel: Model<LiquidityRuleDocument>,
     @InjectModel(PaymentConfig.name)
     private paymentConfigModel: Model<PaymentConfigDocument>,
+    @InjectModel(SupportConfig.name)
+    private supportConfigModel: Model<SupportConfigDocument>,
     @InjectModel(Trade.name)
     private tradeModel: Model<TradeDocument>,
     private tradeService: TradeService,
@@ -503,6 +509,28 @@ export class AdminService {
       { upsert: true, new: true },
     );
     await this.auditService.log(adminId, 'PAYMENT_CONFIG_UPDATE', {
+      adminEmail,
+      targetType: 'config',
+      details: { updatedFields: Object.keys(updates) },
+    });
+    return config;
+  }
+
+  async getSupportConfig() {
+    let config = await this.supportConfigModel.findOne();
+    if (!config) {
+      config = await this.supportConfigModel.create({});
+    }
+    return config;
+  }
+
+  async updateSupportConfig(updates: any, adminId: string, adminEmail?: string) {
+    const config = await this.supportConfigModel.findOneAndUpdate(
+      {},
+      { $set: updates },
+      { upsert: true, new: true },
+    );
+    await this.auditService.log(adminId, 'SUPPORT_CONFIG_UPDATE', {
       adminEmail,
       targetType: 'config',
       details: { updatedFields: Object.keys(updates) },
