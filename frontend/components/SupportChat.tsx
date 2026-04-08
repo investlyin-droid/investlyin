@@ -100,7 +100,7 @@ export default function SupportChat() {
     if (!user) return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-[9999]">
+        <div className="fixed bottom-6 left-6 sm:left-auto sm:right-6 z-[9999]">
             {/* Floating Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -121,7 +121,7 @@ export default function SupportChat() {
 
             {/* Chat Menu / Widget Window */}
             {isOpen && (
-                <div className="absolute bottom-16 right-0 w-[320px] sm:w-[350px] animate-scale-up origin-bottom-right">
+                <div className="absolute bottom-16 left-0 sm:left-auto sm:right-0 w-[320px] sm:w-[350px] animate-scale-up origin-bottom-left sm:origin-bottom-right">
                     <div className="bg-[#0B0E11] border border-white/10 rounded-[20px] shadow-2xl overflow-hidden flex flex-col h-[420px] sm:h-[480px]">
                         {/* Header */}
                         <div className="p-4 bg-gradient-to-r from-brand-gold/10 to-transparent flex items-center gap-3 border-b border-white/5 shrink-0">
