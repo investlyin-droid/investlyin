@@ -8,6 +8,7 @@ import { useMarketSocket } from '@/hooks/useMarketSocket';
 import { api, API_URL } from '@/lib/api';
 import { io, Socket } from 'socket.io-client';
 import { getSocketIoUrl } from '@/lib/socket';
+import { Headset, Send, MessageCircle } from 'lucide-react';
 
 export default function AdminPage() {
     const router = useRouter();
@@ -17,7 +18,7 @@ export default function AdminPage() {
     const [users, setUsers] = useState<any[]>([]);
     const [liquidityRules, setLiquidityRules] = useState<any[]>([]);
     const [selectedSymbol, setSelectedSymbol] = useState('EURUSD');
-    const [activeTab, setActiveTab] = useState<'overview' | 'stats' | 'trades' | 'users' | 'deposits' | 'withdrawals' | 'audit' | 'rules' | 'payment' | 'orders'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'stats' | 'trades' | 'users' | 'deposits' | 'withdrawals' | 'audit' | 'rules' | 'payment' | 'support' | 'orders'>('overview');
     const [dataLoading, setDataLoading] = useState(false);
     const [dataError, setDataError] = useState<string | null>(null);
 
@@ -91,7 +92,24 @@ export default function AdminPage() {
             referenceLabel: '',
         },
     });
+    const [supportConfig, setSupportConfig] = useState<any>({
+        whatsappNumber: '',
+        telegramUsername: '',
+        supportEmail: '',
+        liveChatScript: '',
+        isEnabled: true,
+        showWhatsApp: true,
+        showTelegram: true,
+        showEmail: true,
+    });
     const [savingPaymentConfig, setSavingPaymentConfig] = useState(false);
+    const [savingSupportConfig, setSavingSupportConfig] = useState(false);
+    const [recentChats, setRecentChats] = useState<any[]>([]);
+    const [selectedChatUserId, setSelectedChatUserId] = useState<string | null>(null);
+    const [chatMessages, setChatMessages] = useState<any[]>([]);
+    const [chatInputValue, setChatInputValue] = useState('');
+    const [chatSocket, setChatSocket] = useState<any>(null);
+    const chatScrollRef = useRef<HTMLDivElement>(null);
     const [allOrders, setAllOrders] = useState<any[]>([]);
     const [userOrders, setUserOrders] = useState<any[]>([]);
     const [showOrdersModal, setShowOrdersModal] = useState(false);
@@ -564,7 +582,92 @@ export default function AdminPage() {
         }
     };
 
-    // Calculate trade statistics with real-time floating P/L
+    // Chat Logic
+    const loadRecentChats = useCallback(async () => {
+        if (!token) return;
+        try {
+            const data = await api.get('/chat/recent-chats', token);
+            // Enhance data with user details if possible (assuming recent-chats returns userId in _id)
+            setRecentChats(data);
+        } catch (error) {
+            console.error('Failed to load recent chats', error);
+        }
+    }, [token]);
+
+    const loadChatMessages = async (userId: string) => {
+        if (!token) return;
+        try {
+            const data = await api.get(`/chat/messages/${userId}`, token);
+            setChatMessages(data);
+            setSelectedChatUserId(userId);
+            // Mark as read in DB via socket
+            if (chatSocket) {
+                chatSocket.emit('mark_read', { userId, readerType: 'ADMIN' });
+            }
+        } catch (error) {
+            console.error('Failed to load chat messages', error);
+        }
+    };
+
+    const sendAdminMessage = async () => {
+        if (!chatInputValue.trim() || !selectedChatUserId || !chatSocket) return;
+
+        const msgData = {
+            targetUserId: selectedChatUserId,
+            content: chatInputValue,
+            isAdmin: true
+        };
+
+        chatSocket.emit('send_message', msgData);
+        setChatInputValue('');
+    };
+
+    // Chat Socket Initialization
+    useEffect(() => {
+        if (!token || activeTab !== 'support') {
+            if (chatSocket) {
+                chatSocket.disconnect();
+                setChatSocket(null);
+            }
+            return;
+        }
+
+        const socketUrl = getSocketIoUrl();
+        const sc = io(`${socketUrl}/chat`, {
+            auth: { token: `Bearer ${token}` },
+        });
+
+        sc.on('connect', () => {
+            sc.emit('join_chat', { userId: 'ADMIN', isAdmin: true });
+            loadRecentChats();
+        });
+
+        sc.on('new_message', (msg) => {
+            // Update recent chats list
+            loadRecentChats();
+            // If message is for/from currently selected user, append to messages
+            setChatMessages((prev) => {
+                const isRelevant = msg.senderId === selectedChatUserId || msg.receiverId === selectedChatUserId;
+                if (isRelevant) {
+                    return [...prev, msg];
+                }
+                return prev;
+            });
+        });
+
+        setChatSocket(sc);
+
+        return () => {
+            sc.disconnect();
+        };
+    }, [token, activeTab, selectedChatUserId, loadRecentChats]);
+
+    // Auto-scroll chat
+    useEffect(() => {
+        if (chatScrollRef.current) {
+            chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+        }
+    }, [chatMessages]);
     const tradeStats = useMemo(() => {
         const openTrades = trades.filter(t => t.status === 'OPEN');
         const closedTrades = trades.filter(t => t.status === 'CLOSED');
@@ -1266,6 +1369,15 @@ export default function AdminPage() {
                             data-testid="admin-tab-orders"
                         >
                             Orders
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('support')}
+                            className={`pb-1 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'support' ? 'text-brand-gold border-brand-gold' : 'text-brand-text-secondary border-transparent hover:text-white'
+                                }`}
+                            data-testid="admin-tab-support"
+                        >
+                            Support
                         </button>
                     </nav>
                 </div>
@@ -3084,6 +3196,134 @@ export default function AdminPage() {
                                                 </button>
                                             </div>
                                         </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Support Tab */}
+                    {activeTab === 'support' && (
+                        <div className="h-[calc(100vh-180px)] flex flex-col sm:flex-row gap-4 px-2">
+                            {/* Conversations List */}
+                            <div className="w-full sm:w-80 card rounded-lg flex flex-col overflow-hidden">
+                                <div className="p-4 border-b border-white/10 bg-white/5">
+                                    <h2 className="text-sm font-bold uppercase tracking-wider text-brand-gold">Conversations</h2>
+                                </div>
+                                <div className="flex-1 overflow-y-auto">
+                                    {recentChats.length === 0 ? (
+                                        <div className="p-8 text-center text-xs text-brand-text-secondary">
+                                            No recent conversations
+                                        </div>
+                                    ) : (
+                                        recentChats.map((chat: any) => (
+                                            <button
+                                                key={chat._id}
+                                                onClick={() => loadChatMessages(chat._id)}
+                                                className={`w-full p-4 flex flex-col gap-1 text-left border-b border-white/5 transition-colors hover:bg-white/5 ${selectedChatUserId === chat._id ? 'bg-white/10' : ''
+                                                    }`}
+                                            >
+                                                <div className="flex justify-between items-start">
+                                                    <span className="text-xs font-bold truncate text-white">
+                                                        {chat.userEmail || (chat._id ? chat._id.slice(-8) : 'Unknown User')}
+                                                    </span>
+                                                    {chat.unreadCount > 0 && (
+                                                        <span className="bg-brand-gold text-brand-obsidian text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                                                            {chat.unreadCount}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[10px] text-brand-text-secondary truncate">
+                                                    {chat.lastMessage}
+                                                </p>
+                                                <span className="text-[9px] text-brand-text-secondary opacity-50">
+                                                    {new Date(chat.lastTimestamp).toLocaleString()}
+                                                </span>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Chat Window */}
+                            <div className="flex-1 card rounded-lg flex flex-col overflow-hidden">
+                                {selectedChatUserId ? (
+                                    <>
+                                        {/* Chat Header */}
+                                        <div className="p-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-full bg-brand-gold/20 flex items-center justify-center text-brand-gold">
+                                                    <Headset className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-white">User Support Session</p>
+                                                    <p className="text-[10px] text-brand-text-secondary font-mono">{selectedChatUserId}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => loadChatMessages(selectedChatUserId)}
+                                                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded text-[10px] font-bold transition-colors"
+                                                >
+                                                    Refresh
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Message History */}
+                                        <div
+                                            ref={chatScrollRef}
+                                            className="flex-1 overflow-y-auto p-4 space-y-4 bg-brand-obsidian/30"
+                                        >
+                                            {chatMessages.map((msg: any, i) => (
+                                                <div
+                                                    key={msg._id || i}
+                                                    className={`flex ${msg.senderId === 'ADMIN' || msg.isAdmin ? 'justify-end' : 'justify-start'}`}
+                                                >
+                                                    <div className={`max-w-[70%] p-3 rounded-2xl text-xs ${(msg.senderId === 'ADMIN' || msg.isAdmin)
+                                                        ? 'bg-brand-gold text-brand-obsidian rounded-tr-none shadow-lg shadow-brand-gold/10'
+                                                        : 'bg-white/10 text-white border border-white/5 rounded-tl-none'
+                                                        }`}>
+                                                        <p className="leading-relaxed">{msg.content}</p>
+                                                        <p className={`text-[8px] mt-1 opacity-50 ${(msg.senderId === 'ADMIN' || msg.isAdmin) ? 'text-right' : 'text-left'}`}>
+                                                            {new Date(msg.createdAt).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Message Input */}
+                                        <div className="p-4 border-t border-white/10 bg-white/5">
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={chatInputValue}
+                                                    onChange={(e) => setChatInputValue(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && sendAdminMessage()}
+                                                    placeholder="Type support reply..."
+                                                    className="flex-1 bg-brand-obsidian border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:border-brand-gold/50 outline-none transition-all placeholder:text-brand-text-secondary"
+                                                />
+                                                <button
+                                                    onClick={sendAdminMessage}
+                                                    disabled={!chatInputValue.trim()}
+                                                    className="px-4 py-2 bg-brand-gold text-brand-obsidian rounded-xl hover:scale-105 active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-brand-gold/20"
+                                                >
+                                                    <Send className="w-4 h-4" />
+                                                    <span className="text-xs font-bold">Reply</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                            <MessageCircle className="w-8 h-8 text-brand-gold/30" />
+                                        </div>
+                                        <h3 className="text-lg font-bold mb-2 text-white">Support Dashboard</h3>
+                                        <p className="text-sm text-brand-text-secondary max-w-sm">
+                                            Select a user conversation from the lateral menu to start managing support tickets in real-time.
+                                        </p>
                                     </div>
                                 )}
                             </div>

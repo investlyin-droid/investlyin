@@ -15,6 +15,7 @@ import { LedgerModule } from './ledger/ledger.module';
 import { AdminModule } from './admin/admin.module';
 import { NewsModule } from './news/news.module';
 import { OrdersModule } from './orders/orders.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { OrdersModule } from './orders/orders.module';
     AdminModule,
     NewsModule,
     OrdersModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [
@@ -76,4 +78,4 @@ import { OrdersModule } from './orders/orders.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

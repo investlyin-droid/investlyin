@@ -1,19 +1,96 @@
-'use client';
-
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     MessageCircle,
     X,
-    Send,
     Mail,
-    Phone,
     ShieldCheck,
     TrendingUp,
-    Headset
+    Headset,
+    Send,
+    Loader2,
 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { io, Socket } from 'socket.io-client';
+import { getSocketIoUrl } from '@/lib/socket';
 
 export default function SupportChat() {
     const [isOpen, setIsOpen] = useState(false);
+    const [messages, setMessages] = useState<any[]>([]);
+    const [inputValue, setInputValue] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const { user, token } = useAuth();
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Connection logic
+    useEffect(() => {
+        if (!token || !user) return;
+
+        const socketUrl = getSocketIoUrl();
+        const newSocket = io(`${socketUrl}/chat`, {
+            auth: { token: `Bearer ${token}` },
+        });
+
+        newSocket.on('connect', () => {
+            newSocket.emit('join_chat', { userId: user.id });
+        });
+
+        newSocket.on('new_message', (msg) => {
+            setMessages((prev) => [...prev, msg]);
+        });
+
+        setSocket(newSocket);
+
+        return () => {
+            newSocket.disconnect();
+        };
+    }, [token, user]);
+
+    // Load history logic
+    useEffect(() => {
+        if (isOpen && user && token) {
+            loadHistory();
+        }
+    }, [isOpen, user, token]);
+
+    // Auto-scroll logic
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [messages, isOpen]);
+
+    const loadHistory = async () => {
+        try {
+            setLoading(true);
+            const history = await api.get(`/chat/messages/${user!.id}`, token!);
+            setMessages(history);
+            // Mark as read
+            if (socket) {
+                socket.emit('mark_read', { userId: user!.id, readerType: 'USER' });
+            }
+        } catch (err) {
+            console.error('Failed to load chat history', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const sendMessage = async () => {
+        if (!inputValue.trim() || !socket || !user) return;
+
+        const msgData = {
+            userId: user.id,
+            content: inputValue,
+            isAdmin: false
+        };
+
+        socket.emit('send_message', msgData);
+        setInputValue('');
+    };
+
+    if (!user) return null;
 
     return (
         <div className="fixed bottom-6 right-6 z-[9999]">
@@ -38,77 +115,94 @@ export default function SupportChat() {
             {/* Chat Menu / Widget Window */}
             {isOpen && (
                 <div className="absolute bottom-16 right-0 w-[350px] animate-scale-up origin-bottom-right">
-                    <div className="bg-brand-obsidian border border-white/10 rounded-[24px] shadow-2xl overflow-hidden glass-panel">
+                    <div className="bg-brand-obsidian border border-white/10 rounded-[24px] shadow-2xl overflow-hidden glass-panel flex flex-col h-[500px]">
                         {/* Header */}
-                        <div className="p-6 bg-gradient-to-r from-brand-gold/10 to-transparent flex items-center gap-4 border-b border-white/5">
-                            <div className="w-10 h-10 rounded-xl bg-brand-gold/20 flex items-center justify-center text-brand-gold">
-                                <Headset className="w-6 h-6" />
+                        <div className="p-4 bg-gradient-to-r from-brand-gold/10 to-transparent flex items-center gap-3 border-b border-white/5 shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-brand-gold/20 flex items-center justify-center text-brand-gold">
+                                <Headset className="w-5 h-5" />
                             </div>
-                            <div>
-                                <h3 className="text-white font-bold text-sm tracking-tight uppercase">Trading Support</h3>
-                                <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className="flex-1">
+                                <h3 className="text-white font-bold text-xs tracking-tight uppercase">Terminal Support</h3>
+                                <div className="flex items-center gap-1.5 ">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                    <span className="text-[10px] text-brand-text-secondary font-medium tracking-wide">Agents Online</span>
+                                    <span className="text-[10px] text-brand-text-secondary font-medium tracking-wide">Connected</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Content */}
-                        <div className="p-6 space-y-4">
-                            <p className="text-brand-text-secondary text-xs leading-relaxed">
-                                Connect with our team for priority support regarding account verification, deposits, or technical terminal issues.
-                            </p>
-
-                            <div className="grid gap-3">
-                                <a
-                                    href="https://wa.me/yournumber"
-                                    target="_blank"
-                                    className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-brand-gold/30 transition-all group"
-                                >
-                                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
-                                        <MessageCircle className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="text-[11px] font-bold text-white leading-none">WhatsApp High-Priority</div>
-                                        <div className="text-[9px] text-brand-text-secondary mt-1 tracking-tight">Average response: 5 mins</div>
-                                    </div>
-                                </a>
-
-                                <a
-                                    href="mailto:support@investlyin.com"
-                                    className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-brand-gold/30 transition-all group"
-                                >
-                                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                                        <Mail className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="text-[11px] font-bold text-white leading-none">Official Desk Support</div>
-                                        <div className="text-[9px] text-brand-text-secondary mt-1 tracking-tight">Email us for documentation</div>
-                                    </div>
-                                </a>
-
-                                <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-2xl opacity-60">
-                                    <div className="w-8 h-8 rounded-lg bg-brand-gold/20 flex items-center justify-center text-brand-gold">
-                                        <Phone className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="text-[11px] font-bold text-white leading-none">Callback Service</div>
-                                        <div className="text-[9px] text-brand-text-secondary mt-1 tracking-tight">VIP / Gold Accounts only</div>
-                                    </div>
+                        {/* Chat Body */}
+                        <div
+                            ref={scrollRef}
+                            className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-white/10"
+                        >
+                            {loading && messages.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full space-y-2">
+                                    <Loader2 className="w-6 h-6 text-brand-gold animate-spin" />
+                                    <p className="text-[10px] text-brand-text-secondary uppercase tracking-widest">Securing Connection...</p>
                                 </div>
+                            ) : messages.length === 0 ? (
+                                <div className="text-center py-10">
+                                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
+                                        <MessageCircle className="w-6 h-6 text-brand-gold/50" />
+                                    </div>
+                                    <p className="text-xs text-white font-medium">Start a conversation</p>
+                                    <p className="text-[10px] text-brand-text-secondary mt-1">Our support team is here to help.</p>
+                                </div>
+                            ) : (
+                                messages.map((msg: any, i) => {
+                                    const isAdminMsg = msg.isAdmin;
+                                    const messageDate = new Date(msg.createdAt);
+                                    return (
+                                        <div
+                                            key={msg._id || i}
+                                            className={`flex ${!isAdminMsg ? 'justify-end' : 'justify-start'}`}
+                                        >
+                                            <div className={`max-w-[80%] p-3 rounded-2xl text-[11px] font-medium leading-relaxed ${!isAdminMsg
+                                                    ? 'bg-brand-gold text-brand-obsidian rounded-tr-none'
+                                                    : 'bg-white/10 text-white border border-white/5 rounded-tl-none'
+                                                }`}>
+                                                {msg.content}
+                                                <div className={`text-[8px] mt-1 opacity-50 ${!isAdminMsg ? 'text-right' : 'text-left'}`}>
+                                                    {messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="p-4 border-t border-white/5 bg-white/5 shrink-0">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                                    placeholder="Type your message..."
+                                    className="w-full bg-brand-obsidian border border-white/10 rounded-xl py-2.5 pl-4 pr-12 text-xs text-white placeholder:text-brand-text-secondary focus:border-brand-gold/50 outline-none transition-all"
+                                />
+                                <button
+                                    onClick={sendMessage}
+                                    disabled={!inputValue.trim()}
+                                    className="absolute right-2 top-1.5 w-8 h-8 rounded-lg bg-brand-gold text-brand-obsidian flex items-center justify-center hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all"
+                                >
+                                    <Send className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 bg-white/5 border-t border-white/10 flex items-center justify-center gap-4">
+                        <div className="p-3 bg-white/5 border-t border-white/10 flex items-center justify-center gap-4 shrink-0">
                             <div className="flex items-center gap-1">
                                 <ShieldCheck className="w-3 h-3 text-brand-gold" />
-                                <span className="text-[8px] text-brand-text-secondary uppercase tracking-widest font-medium">Secured Terminal</span>
+                                <span className="text-[8px] text-brand-text-secondary uppercase tracking-widest font-medium">Secured</span>
                             </div>
                             <div className="w-1 h-1 rounded-full bg-white/10"></div>
                             <div className="flex items-center gap-1">
                                 <TrendingUp className="w-3 h-3 text-emerald-500" />
-                                <span className="text-[8px] text-brand-text-secondary uppercase tracking-widest font-medium">Realtime Match</span>
+                                <span className="text-[8px] text-brand-text-secondary uppercase tracking-widest font-medium">Precision</span>
                             </div>
                         </div>
                     </div>
