@@ -4,7 +4,11 @@ export enum KycStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
+  pending = 'PENDING',
+  approved = 'APPROVED',
+  rejected = 'REJECTED',
 }
+
 
 export class UpdateKycStatusDto {
   @IsEnum(KycStatus)
