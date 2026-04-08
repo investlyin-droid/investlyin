@@ -11,12 +11,14 @@ export enum KycStatus {
 
 
 export class UpdateKycStatusDto {
-  @IsEnum(KycStatus)
-  kycStatus: KycStatus;
+  @IsString()
+  @IsNotEmpty()
+  kycStatus: string;
 
   @IsString()
   @IsOptional()
   reason?: string;
 }
+
 
 
