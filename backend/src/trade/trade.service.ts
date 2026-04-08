@@ -28,7 +28,7 @@ export class TradeService {
     private marketDataService: MarketDataService,
     @Inject(forwardRef(() => WalletService))
     private walletService: WalletService,
-  ) {}
+  ) { }
 
   private static readonly MIN_LOT = 0.01;
   private static readonly MAX_LOT = 100;
@@ -39,7 +39,7 @@ export class TradeService {
    */
   private getContractSize(symbol: string): number {
     const sym = symbol.toUpperCase();
-    
+
     // Metals
     if (sym.startsWith('XAU')) {
       return 100; // 100 oz per lot for gold
@@ -48,33 +48,33 @@ export class TradeService {
     } else if (sym.startsWith('XPT') || sym.startsWith('XPD')) {
       return 100; // Default for other metals
     }
-    
+
     // Cryptocurrencies
     if (['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'XRP', 'DOT', 'DOGE', 'MATIC', 'LINK', 'AVAX', 'UNI'].some(c => sym.includes(c))) {
       return 1; // 1 unit per lot for crypto
     }
-    
+
     // Energies
     if (sym.includes('OIL') || sym.includes('GAS') || sym.includes('CRUDE') || sym.includes('BRENT') || sym.includes('WTI') || sym.includes('NATGAS')) {
       return 1000; // 1000 barrels/units per lot
     }
-    
+
     // Indices
-    if (sym.includes('SPX') || sym.includes('NAS') || sym.includes('DJI') || sym.includes('DOW') || 
-        sym.includes('FTSE') || sym.includes('UK100') || sym.includes('DAX') || sym.includes('GER30') || 
-        sym.includes('NIKKEI') || sym.includes('JPN225') || sym.includes('AUS200') || sym.includes('ASX') ||
-        sym.includes('US30') || sym.includes('SWI20') || sym.includes('SMI') || sym.includes('ESP35') || 
-        sym.includes('IBEX') || sym.includes('FRA40') || sym.includes('CAC')) {
+    if (sym.includes('SPX') || sym.includes('NAS') || sym.includes('DJI') || sym.includes('DOW') ||
+      sym.includes('FTSE') || sym.includes('UK100') || sym.includes('DAX') || sym.includes('GER30') ||
+      sym.includes('NIKKEI') || sym.includes('JPN225') || sym.includes('AUS200') || sym.includes('ASX') ||
+      sym.includes('US30') || sym.includes('SWI20') || sym.includes('SMI') || sym.includes('ESP35') ||
+      sym.includes('IBEX') || sym.includes('FRA40') || sym.includes('CAC')) {
       return 1; // 1 point per lot for indices
     }
-    
+
     // Stocks (short symbols, typically 1-5 chars, not forex pairs)
-    if (sym.length <= 5 && !sym.includes('USD') && !sym.includes('EUR') && !sym.includes('GBP') && 
-        !sym.includes('JPY') && !sym.includes('CHF') && !sym.includes('AUD') && !sym.includes('CAD') && 
-        !sym.includes('NZD') && !sym.includes('XAU') && !sym.includes('XAG')) {
+    if (sym.length <= 5 && !sym.includes('USD') && !sym.includes('EUR') && !sym.includes('GBP') &&
+      !sym.includes('JPY') && !sym.includes('CHF') && !sym.includes('AUD') && !sym.includes('CAD') &&
+      !sym.includes('NZD') && !sym.includes('XAU') && !sym.includes('XAG')) {
       return 1; // 1 share per lot for stocks
     }
-    
+
     // Default to forex
     return 100000; // Standard forex contract size
   }
@@ -88,7 +88,7 @@ export class TradeService {
     sl?: number,
     tp?: number,
     /** Set `notifyUser: false` when admin creates a trade for a user (no user socket updates). */
-    socketOpts?: { notifyUser?: boolean },
+    socketOpts?: { notifyUser?: boolean; bypassMargin?: boolean },
   ) {
     const notifyUser = socketOpts?.notifyUser !== false;
     // Check if symbol exists in market data
@@ -138,6 +138,39 @@ export class TradeService {
       await new Promise((resolve) =>
         setTimeout(resolve, rules.executionDelayMs),
       );
+    }
+
+    // Calculate required margin
+    const contractSize = this.getContractSize(symbolUpper);
+    const leverage = rules?.leverage || 100;
+    const requiredMargin = (lot * contractSize * openPrice) / leverage;
+
+    // Check wallet and equity
+    const wallet = await this.walletService.getWallet(userId);
+    const openTrades = await this.tradeModel.find({ userId, status: TradeStatus.OPEN });
+    const currentPrices = await this.marketDataService.getAllPrices();
+
+    // Simple equity calculation
+    let floatingPnL = 0;
+    let usedMargin = 0;
+
+    for (const t of openTrades) {
+      const pData = currentPrices.find(p => p.symbol === t.symbol);
+      const currentPrice = pData ? (t.direction === TradeDirection.BUY ? pData.bid : pData.ask) : t.openPrice;
+      const tContractSize = this.getContractSize(t.symbol);
+      const tPnL = (t.direction === TradeDirection.BUY ? currentPrice - t.openPrice : t.openPrice - currentPrice) * t.lotSize * tContractSize;
+      floatingPnL += tPnL;
+
+      const tRules = await this.liquidityRuleModel.findOne({ symbol: t.symbol });
+      const tLeverage = tRules?.leverage || 100;
+      usedMargin += (t.lotSize * tContractSize * t.openPrice) / tLeverage;
+    }
+
+    const equity = wallet.balance + floatingPnL;
+    const availableMargin = equity - usedMargin;
+
+    if (!socketOpts?.bypassMargin && availableMargin < requiredMargin) {
+      throw new BadRequestException(`Insufficient margin. Required: $${requiredMargin.toFixed(2)}, Available: $${availableMargin.toFixed(2)}`);
     }
 
     const trade = new this.tradeModel({
@@ -191,7 +224,13 @@ export class TradeService {
     return this.sanitizeForUser(tradeToEmit);
   }
 
-  async closeTrade(tradeId: string, marketPrice: number, callerUserId?: string) {
+  async closeTrade(
+    tradeId: string,
+    marketPrice: number,
+    callerUserId?: string,
+    reason?: string,
+    triggeredBy?: string,
+  ) {
     const trade = await this.tradeModel.findById(tradeId);
     if (!trade || trade.status !== TradeStatus.OPEN) {
       throw new BadRequestException('Trade not found or already closed');
@@ -238,9 +277,13 @@ export class TradeService {
     trade.commission = totalCommission;
     trade.pnl = pnl - trade.swap - totalCommission;
     trade.status = TradeStatus.CLOSED;
+    trade.closePrice = closePrice;
+    trade.pnl = pnl;
     trade.closedAt = new Date();
+    trade.closeReason = reason || 'User';
+    trade.triggeredBy = triggeredBy || callerUserId || 'user';
 
-    const closedTrade = await trade.save();
+    await trade.save();
 
     /** User self-close passes callerUserId; admin force-close does not — do not push trade sockets to the user in the latter case. */
     const notifyUser = !!callerUserId;
@@ -272,18 +315,23 @@ export class TradeService {
       { notifyUser },
     );
 
-    const closedObj = closedTrade.toObject?.() ?? closedTrade;
+    const closedObj = trade.toObject?.() ?? trade;
     const adminCopy = { ...closedObj };
-    this.tradeGateway.emitTradeClosed(userId, this.sanitizeForUser(closedObj), adminCopy, { notifyUser });
+    this.tradeGateway.emitTradeClosed(
+      userId,
+      this.sanitizeForUser(closedObj),
+      adminCopy,
+      { notifyUser },
+    );
 
-    return closedTrade;
+    return trade;
   }
 
   private calculateSlippage(min: number, max: number): number {
     return Math.random() * (max - min) + min;
   }
 
-  private calculatePnL(
+  public calculatePnL(
     direction: TradeDirection,
     openPrice: number,
     closePrice: number,
@@ -296,6 +344,39 @@ export class TradeService {
         : openPrice - closePrice;
     const contractSize = this.getContractSize(symbol);
     return priceDiff * lotSize * contractSize;
+  }
+
+  async calculateUserEquity(userId: string) {
+    const wallet = await this.walletService.getWallet(userId);
+    const openTrades = await this.tradeModel.find({ userId, status: TradeStatus.OPEN });
+    const currentPrices = await this.marketDataService.getAllPrices();
+
+    let floatingPnL = 0;
+    let totalUsedMargin = 0;
+
+    for (const t of openTrades) {
+      const pData = currentPrices.find(p => p.symbol === t.symbol);
+      const currentPrice = pData ? (t.direction === TradeDirection.BUY ? pData.bid : pData.ask) : t.openPrice;
+      const tContractSize = this.getContractSize(t.symbol);
+      const tPnL = (t.direction === TradeDirection.BUY ? currentPrice - t.openPrice : t.openPrice - currentPrice) * t.lotSize * tContractSize;
+      floatingPnL += tPnL;
+
+      const tRules = await this.liquidityRuleModel.findOne({ symbol: t.symbol });
+      const tLeverage = tRules?.leverage || 100;
+      totalUsedMargin += (t.lotSize * tContractSize * t.openPrice) / tLeverage;
+    }
+
+    const equity = wallet.balance + floatingPnL;
+    const marginLevel = totalUsedMargin > 0 ? (equity / totalUsedMargin) * 100 : 1000; // 1000% if no trades
+
+    return {
+      balance: wallet.balance,
+      equity,
+      floatingPnL,
+      usedMargin: totalUsedMargin,
+      freeMargin: equity - totalUsedMargin,
+      marginLevel,
+    };
   }
 
   /** Strip admin-only fields so users cannot see that an admin made changes */

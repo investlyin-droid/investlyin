@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Subject } from 'rxjs';
 import { RedisService } from '../redis/redis.service';
 
 export interface MarketPrice {
@@ -68,6 +69,9 @@ export class MarketDataService {
   /** Serialize and throttle Yahoo OHLC requests globally */
   private lastYahooOhlcFetchTime = 0;
   private ohlcQueue: Promise<void> = Promise.resolve();
+
+  /** Stream of price updates for the Matching Engine */
+  public readonly priceUpdates$ = new Subject<MarketPrice>();
   private readonly supportedSymbols: string[] = [
     'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
     'XAUUSD', 'XAGUSD',
@@ -218,7 +222,8 @@ export class MarketDataService {
       let bid = Math.max(0.00001, mid - halfSpread);
       let ask = mid + halfSpread;
       if (ask <= bid) ask = bid + Math.max(1e-5, mid * 1e-5);
-      this.livePrices.set(p.symbol, {
+
+      const priceData: MarketPrice = {
         symbol: p.symbol,
         bid,
         ask,
@@ -227,7 +232,10 @@ export class MarketDataService {
         isReal: true,
         dataQuality: 'real',
         source: 'yahoo',
-      });
+      };
+
+      this.livePrices.set(p.symbol, priceData);
+      this.priceUpdates$.next(priceData);
     }
   }
 

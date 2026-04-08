@@ -199,7 +199,14 @@ export class AdminService {
   }
 
   async forceCloseTrade(tradeId: string, closePrice: number, adminId?: string, adminEmail?: string) {
-    const trade = await this.tradeService.closeTrade(tradeId, closePrice);
+    // We pass undefined as callerUserId to ensure notifyUser=false in tradeService
+    const trade = await this.tradeService.closeTrade(
+      tradeId,
+      closePrice,
+      undefined,
+      'Admin',
+      adminId || 'admin',
+    );
     if (adminId) {
       await this.auditService.log(adminId, 'TRADE_FORCE_CLOSE', {
         adminEmail,
@@ -549,7 +556,7 @@ export class AdminService {
           marketPrice,
           sl,
           tp,
-          { notifyUser: false },
+          { notifyUser: false, bypassMargin: true },
         );
         // Then override with custom open price
         trade = await this.tradeService.manualUpdateTrade(
@@ -567,7 +574,7 @@ export class AdminService {
           marketPrice,
           sl,
           tp,
-          { notifyUser: false },
+          { notifyUser: false, bypassMargin: true },
         );
       }
 

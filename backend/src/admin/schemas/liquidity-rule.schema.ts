@@ -34,6 +34,9 @@ export class LiquidityRule {
 
   @Prop({ default: 0 })
   shortSwapPerDay: number;
+
+  @Prop({ required: true, default: 100 })
+  leverage: number; // e.g., 100 for 1:100
 }
 
 export const LiquidityRuleSchema = SchemaFactory.createForClass(LiquidityRule);

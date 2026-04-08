@@ -3,7 +3,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { TradeService } from './trade.service';
 import { TradeController } from './trade.controller';
 import { TradeGateway } from './trade.gateway';
+import { MatchingEngineService } from './matching-engine.service';
 import { Trade, TradeSchema } from './schemas/trade.schema';
+import { Order, OrderSchema } from '../orders/schemas/order.schema';
 import {
   LiquidityRule,
   LiquidityRuleSchema,
@@ -17,13 +19,14 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
     MongooseModule.forFeature([
       { name: Trade.name, schema: TradeSchema },
+      { name: Order.name, schema: OrderSchema },
       { name: LiquidityRule.name, schema: LiquidityRuleSchema },
     ]),
     forwardRef(() => MarketDataModule),
     forwardRef(() => WalletModule),
   ],
   controllers: [TradeController],
-  providers: [TradeService, TradeGateway],
-  exports: [TradeService, TradeGateway],
+  providers: [TradeService, TradeGateway, MatchingEngineService],
+  exports: [TradeService, TradeGateway, MatchingEngineService],
 })
-export class TradeModule {}
+export class TradeModule { }

@@ -36,4 +36,8 @@ export class UpdateLiquidityRuleDto {
   @IsOptional()
   @IsNumber()
   shortSwapPerDay?: number;
+
+  @IsOptional()
+  @IsNumber()
+  leverage?: number;
 }

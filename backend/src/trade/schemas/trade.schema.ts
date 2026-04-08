@@ -66,6 +66,12 @@ export class Trade {
 
   @Prop({ type: Object })
   adminNotes: Record<string, any>; // Admin notes/metadata
+
+  @Prop()
+  closeReason: string; // e.g. 'Stop Loss', 'Take Profit', 'Liquidation', 'User', 'Admin'
+
+  @Prop()
+  triggeredBy: string; // Identifier of what triggered the close (userId, adminId, or 'engine')
 }
 
 export const TradeSchema = SchemaFactory.createForClass(Trade);
