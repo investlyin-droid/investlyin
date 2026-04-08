@@ -1,4 +1,5 @@
-import { IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsNotEmpty } from 'class-validator';
+
 
 export enum KycStatus {
   PENDING = 'PENDING',
