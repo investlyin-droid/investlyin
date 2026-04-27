@@ -8,6 +8,74 @@ import Navigation from '@/components/Navigation';
 import TradingCalculator from '@/components/TradingCalculator';
 import ProfitCalculator from '@/components/ProfitCalculator';
 
+const GoldBullion = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 50L20 10H80L90 50H10Z" fill="url(#goldGradient)" />
+    <path d="M20 10H80L85 30H15L20 10Z" fill="white" fillOpacity="0.1" />
+    <path d="M15 30H85L90 50H10L15 30Z" fill="black" fillOpacity="0.1" />
+    <defs>
+      <linearGradient id="goldGradient" x1="50" y1="10" x2="50" y2="50" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#FFD700" />
+        <stop offset="0.5" stopColor="#D4AF37" />
+        <stop offset="1" stopColor="#B8860B" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const FloatingChart = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 80 Q 40 10, 70 60 T 130 30 T 190 70" stroke="url(#chartGradient)" strokeWidth="4" fill="none" strokeLinecap="round" />
+    <path d="M10 80 Q 40 10, 70 60 T 130 30 T 190 70 V 100 H 10 Z" fill="url(#areaGradient)" opacity="0.1" />
+    <defs>
+      <linearGradient id="chartGradient" x1="10" y1="50" x2="190" y2="50" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#FFD700" />
+        <stop offset="1" stopColor="#D4AF37" />
+      </linearGradient>
+      <linearGradient id="areaGradient" x1="100" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#D4AF37" />
+        <stop offset="1" stopColor="transparent" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const TrustpilotBanner = () => (
+  <a
+    href="https://www.trustpilot.com/review/www.investlyin.com"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="sticky top-[64px] sm:top-[80px] z-40 w-full bg-brand-obsidian/95 backdrop-blur-md border-b border-white/10 py-1.5 sm:py-3 shadow-lg animate-fade-in-down block hover:bg-white/[0.02] transition-colors group"
+  >
+    <div className="content-container flex items-center justify-center space-x-3 sm:space-x-12">
+      <div className="flex items-center space-x-2 sm:space-x-4">
+        <div className="flex items-center space-x-0.5 sm:space-x-1">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="bg-[#00b67a] p-[1.5px] sm:p-[2px] rounded-[1px] shadow-[0_0_4px_rgba(0,182,122,0.15)] group-hover:scale-110 transition-transform" style={{ transitionDelay: `${i * 50}ms` }}>
+              <svg className="w-[8px] h-[8px] sm:w-[12px] sm:h-[12px] text-white fill-current" viewBox="0 0 20 20">
+                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+              </svg>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <svg className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-[#00b67a] group-hover:animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4-6.2-4.5h7.6z" />
+          </svg>
+          <span className="text-[9px] sm:text-xs font-black uppercase tracking-[0.15em] sm:tracking-widest text-white/90 group-hover:text-white transition-colors">Trustpilot</span>
+        </div>
+      </div>
+      <div className="h-3 w-[1px] bg-white/20 hidden xs:block"></div>
+      <div className="flex items-center space-x-2 sm:space-x-4">
+        <span className="text-[8px] sm:text-[10px] font-black text-brand-gold leading-none tracking-wider">EXCELLENT</span>
+        <span className="text-[8px] sm:text-[10px] font-bold text-white/50 tracking-wide group-hover:text-white transition-colors">
+          4.8/5 <span className="hidden sm:inline">Verified Rating</span>
+        </span>
+      </div>
+    </div>
+  </a>
+);
+
 export default function LandingPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
@@ -72,9 +140,21 @@ export default function LandingPage() {
     <div className="min-h-screen bg-brand-obsidian text-white overflow-x-hidden">
       {/* Navigation */}
       <Navigation />
+      <TrustpilotBanner />
 
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 sm:pt-24 sm:pb-20 md:pt-32 md:pb-32 lg:pt-32 lg:pb-64 overflow-hidden">
+        {/* Hero Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/hero_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
         {/* Animated Background Elements */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-gold/10 rounded-full blur-[160px] animate-hero-glow"></div>
         <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-brand-blue/5 rounded-full blur-[100px] animate-pulse"></div>
@@ -87,66 +167,39 @@ export default function LandingPage() {
           {/* Badge */}
           <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-brand-gold/20 via-brand-gold/10 to-brand-gold/20 border border-brand-gold/30 mb-6 sm:mb-8 animate-fade-in backdrop-blur-sm">
             <span className="w-2 h-2 rounded-full bg-brand-gold animate-pulse shadow-lg shadow-brand-gold/50"></span>
-            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-brand-gold">New: Ultra-low latency • 30ms</span>
+            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-brand-gold">New: BSE/NSE Ultra-low latency • 30ms</span>
+          </div>
+
+          {/* Floating Graphics */}
+          <div className="absolute top-20 left-10 w-24 h-16 opacity-30 hidden lg:block animate-float">
+            <GoldBullion className="w-full h-full" />
+          </div>
+          <div className="absolute top-40 right-10 w-20 h-14 opacity-20 hidden lg:block animate-float" style={{ animationDelay: '2s' }}>
+            <GoldBullion className="w-full h-full rotate-12" />
+          </div>
+          <div className="absolute top-60 left-1/4 w-32 h-16 opacity-10 hidden lg:block animate-float" style={{ animationDelay: '1s' }}>
+            <FloatingChart className="w-full h-full" />
           </div>
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl xl:text-9xl font-black tracking-tighter leading-none mb-6 sm:mb-8 animate-fade-in px-4 sm:px-0" style={{ animationDelay: '0.1s' }}>
-            <span className="block mb-1 sm:mb-2">TRADE THE GLOBAL</span>
+            <span className="block mb-1 sm:mb-2 text-white/90">ELEVATE YOUR WEALTH</span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-gold via-white via-brand-gold to-brand-gold bg-[length:200%_auto] animate-gradient">
-              MARKETS BY PROS.
+              THE INDIAN WAY.
             </span>
           </h1>
 
           {/* Subheading */}
-          <p className="max-w-3xl mx-auto text-brand-text-secondary text-base sm:text-lg md:text-xl lg:text-2xl font-medium mb-4 sm:mb-6 leading-relaxed animate-fade-in px-4 sm:px-0" style={{ animationDelay: '0.2s' }}>
-            Experience institutional-grade execution, razor-sharp spreads starting from 0.0 pips, and elite-level liquidity. Built for traders who demand precision, speed, and reliability.
+          <p className="max-w-3xl mx-auto text-white/90 text-base sm:text-lg md:text-xl lg:text-2xl font-medium mb-4 sm:mb-6 leading-relaxed animate-fade-in px-4 sm:px-0" style={{ animationDelay: '0.2s' }}>
+            Experience institutional-grade execution, razor-sharp spreads starting from 0.0 pips, and elite-level liquidity. Built for Indian traders who demand precision, speed, and reliability.
           </p>
 
           {/* Additional Details */}
-          <p className="max-w-2xl mx-auto text-brand-text-secondary/80 text-xs sm:text-sm md:text-base mb-8 sm:mb-10 animate-fade-in px-4 sm:px-0" style={{ animationDelay: '0.25s' }}>
-            Join over 1,000,000+ active traders worldwide. Trade 100+ instruments across Forex, Crypto, Stocks, Indices, and Commodities with leverage up to 1:1000.
+          <p className="max-w-2xl mx-auto text-white/80 text-xs sm:text-sm md:text-base mb-8 sm:mb-10 animate-fade-in px-4 sm:px-0" style={{ animationDelay: '0.25s' }}>
+            Join over 1,000,000+ active traders. Trade 100+ instruments across Forex, Crypto, Stocks, Indices, and Commodities with leverage up to 1:1000.
           </p>
 
-          {/* Premium Trustpilot Rating */}
-          <div className="flex flex-col items-center justify-center mb-12 animate-fade-in" style={{ animationDelay: '0.28s' }}>
-            <div className="flex items-center space-x-1.5 mb-4 group cursor-default">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-[#00b67a] p-1.5 rounded-sm shadow-[0_0_15px_rgba(0,182,122,0.3)] group-hover:scale-110 group-hover:rotate-12 transition-all duration-300"
-                  style={{ transitionDelay: `${i * 50}ms` }}
-                >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                  </svg>
-                </div>
-              ))}
-            </div>
-            <a
-              href="https://www.trustpilot.com/review/www.investlyin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative flex items-center space-x-3 px-8 py-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 rounded-full transition-all duration-300 backdrop-blur-xl hover:border-brand-gold/30 hover:shadow-[0_0_30px_rgba(255,184,0,0.1)]"
-            >
-              <div className="flex items-center space-x-2">
-                <svg className="w-5 h-5 text-[#00b67a] animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4-6.2-4.5h7.6z" />
-                </svg>
-                <span className="text-sm font-black uppercase tracking-widest text-white/90">Trustpilot</span>
-              </div>
-              <div className="h-4 w-[1px] bg-white/20"></div>
-              <div className="flex flex-col items-start">
-                <span className="text-[10px] font-black text-brand-gold leading-none mb-0.5">EXCELLENT</span>
-                <span className="text-[9px] font-bold text-brand-text-secondary/70 group-hover:text-white transition-colors">4.8/5 Verified Rating</span>
-              </div>
 
-              {/* Subtle light streak animation */}
-              <div className="absolute inset-0 overflow-hidden rounded-full font-black">
-                <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-              </div>
-            </a>
-          </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4 md:space-x-6 mb-10 sm:mb-12 md:mb-16 animate-fade-in px-4 sm:px-0" style={{ animationDelay: '0.3s' }}>
@@ -220,11 +273,29 @@ export default function LandingPage() {
 
       {/* Features Section */}
       <section id="features" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden">
+        {/* Features Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/features_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-gold/5 rounded-full blur-[120px]"></div>
 
         <div className="content-container relative z-10">
+          {/* Floating Graphics */}
+          <div className="absolute top-20 right-10 w-24 h-16 opacity-10 hidden lg:block animate-float">
+            <GoldBullion className="w-full h-full rotate-12" />
+          </div>
+          <div className="absolute top-40 left-10 w-32 h-16 opacity-10 hidden lg:block animate-float" style={{ animationDelay: '3s' }}>
+            <FloatingChart className="w-full h-full -rotate-6" />
+          </div>
+
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <svg className="w-3 h-3 sm:w-4 sm:h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,8 +303,8 @@ export default function LandingPage() {
               </svg>
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">The Platform</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0">Institutional Technology, For Everyone.</h3>
-            <p className="max-w-2xl mx-auto text-brand-text-secondary text-base sm:text-lg font-medium px-4 sm:px-0">
+            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0 text-white">Institutional Technology, For Everyone.</h3>
+            <p className="max-w-2xl mx-auto text-white/90 text-base sm:text-lg font-medium px-4 sm:px-0">
               Built with cutting-edge technology and designed for both professional traders and beginners. Experience the power of institutional-grade trading tools.
             </p>
           </div>
@@ -262,8 +333,27 @@ export default function LandingPage() {
       </section>
 
       {/* Markets Section */}
-      <section id="markets" className="py-16 sm:py-20 md:py-24 lg:py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
+      <section id="markets" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden">
+        {/* Markets Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/stock_exchange_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
+          {/* Floating Graphics */}
+          <div className="absolute top-20 right-10 w-24 h-16 opacity-20 hidden lg:block animate-float">
+            <GoldBullion className="w-full h-full rotate-12" />
+          </div>
+          <div className="absolute bottom-20 left-10 w-32 h-16 opacity-15 hidden lg:block animate-float" style={{ animationDelay: '1.5s' }}>
+            <FloatingChart className="w-full h-full" />
+          </div>
+
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <svg className="w-3 h-3 sm:w-4 sm:h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -271,30 +361,49 @@ export default function LandingPage() {
               </svg>
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">Trading Markets</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0">Access Global Markets, 24/7</h3>
-            <p className="text-brand-text-secondary text-base sm:text-lg md:text-xl mt-4 sm:mt-6 max-w-3xl mx-auto font-medium leading-relaxed px-4 sm:px-0">
-              Trade across multiple asset classes with institutional-grade liquidity and competitive spreads. From major currency pairs to cryptocurrencies, stocks, and commodities - access 100+ instruments with tight spreads from 0.0 pips and fast execution.
+            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0 text-white">Access Global & Indian Markets, 24/7</h3>
+            <p className="text-white/95 text-base sm:text-lg md:text-xl mt-4 sm:mt-6 max-w-3xl mx-auto font-medium leading-relaxed px-4 sm:px-0">
+              Trade across multiple asset classes with institutional-grade liquidity. From NSE/BSE indices to major currency pairs, cryptocurrencies, stocks, and commodities - access 100+ instruments with tight spreads from 0.0 pips.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <MarketCard id="forex" title="Forex" icon="currency" description="Major, minor, and exotic currency pairs with tight spreads from 0.0 pips" />
+            <MarketCard id="forex" title="Forex" icon="currency" description="Major, minor, and exotic currency pairs with tight spreads including USD/INR" />
             <MarketCard id="metals" title="Metals" icon="gold" description="Trade gold, silver, and other precious metals with competitive pricing" />
             <MarketCard id="crypto" title="Cryptocurrencies" icon="crypto" description="Major crypto pairs including BTC, ETH, and more with 24/7 trading" />
             <MarketCard id="energies" title="Energies" icon="energy" description="Crude oil, natural gas, and other energy commodities" />
-            <MarketCard id="stocks" title="Stocks" icon="stocks" description="Trade shares of major global companies with leverage" />
-            <MarketCard id="indices" title="Indices" icon="indices" description="Global stock indices including S&P 500, NASDAQ, FTSE 100" />
+            <MarketCard id="stocks" title="Stocks" icon="stocks" description="Trade shares of Reliance, Tata, HDFC and major global companies" />
+            <MarketCard id="indices" title="Indices" icon="indices" description="Global stock indices including NIFTY 50, SENSEX, NASDAQ, S&P 500" />
           </div>
         </div>
       </section>
 
       {/* Security Section */}
       <section id="security" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden">
+        {/* Security Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-70 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/security_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
         <div className="absolute top-1/2 left-0 w-96 h-96 bg-brand-gold/5 rounded-full blur-[120px]"></div>
 
         <div className="content-container relative z-10">
+          {/* Floating Graphics */}
+          <div className="absolute top-20 left-10 w-24 h-16 opacity-10 hidden lg:block animate-float">
+            <GoldBullion className="w-full h-full rotate-6" />
+          </div>
+          <div className="absolute bottom-20 right-10 w-32 h-16 opacity-10 hidden lg:block animate-float" style={{ animationDelay: '1.2s' }}>
+            <FloatingChart className="w-full h-full rotate-12" />
+          </div>
+
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <svg className="w-3 h-3 sm:w-4 sm:h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,9 +411,9 @@ export default function LandingPage() {
               </svg>
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">Security First</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0">Your Funds, Protected</h3>
-            <p className="text-brand-text-secondary text-base sm:text-lg md:text-xl mt-4 sm:mt-6 max-w-3xl mx-auto font-medium leading-relaxed px-4 sm:px-0">
-              Enterprise-grade security measures to ensure your capital and data remain safe at all times. We employ bank-level encryption, multi-layer authentication, and regulatory compliance to protect your assets.
+            <h3 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0 text-white">Your Funds, Protected</h3>
+            <p className="text-white/90 text-base sm:text-lg md:text-xl mt-4 sm:mt-6 max-w-3xl mx-auto font-medium leading-relaxed px-4 sm:px-0">
+              Enterprise-grade security measures to ensure your capital and data remain safe at all times. We employ institutional encryption, multi-layer authentication, and global regulatory compliance to protect your assets.
             </p>
           </div>
 
@@ -349,7 +458,17 @@ export default function LandingPage() {
       </section>
 
       {/* About Us Section */}
-      <section id="about" className="py-32 bg-brand-obsidian scroll-mt-20">
+      <section id="about" className="relative py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden">
+        {/* About Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/finance_minister_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
         <div className="content-container">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">About Investlyin</h2>
@@ -358,15 +477,15 @@ export default function LandingPage() {
 
           <div className="max-w-4xl mx-auto">
             <div className="glass-card p-12 rounded-3xl border border-white/5 mb-8">
-              <p className="text-brand-text-secondary text-lg leading-relaxed font-medium mb-6">
+              <p className="text-white/90 text-lg leading-relaxed font-medium mb-6">
                 Investlyin is a leading global trading platform designed to bridge the gap between retail traders and institutional-grade execution.
                 We combine cutting-edge technology with deep market liquidity to deliver an unparalleled trading experience.
               </p>
-              <p className="text-brand-text-secondary text-lg leading-relaxed font-medium mb-6">
+              <p className="text-white/90 text-lg leading-relaxed font-medium mb-6">
                 Our mission is to democratize access to professional trading tools and market access. Whether you're a seasoned professional
                 or just starting your trading journey, Investlyin provides the infrastructure, security, and support you need to succeed.
               </p>
-              <p className="text-brand-text-secondary text-lg leading-relaxed font-medium">
+              <p className="text-white/90 text-lg leading-relaxed font-medium">
                 With over 1,000,000 active traders worldwide, we've built a platform that scales from individual retail accounts to
                 institutional partnerships, all while maintaining the highest standards of security and regulatory compliance.
               </p>
@@ -391,14 +510,32 @@ export default function LandingPage() {
       </section>
 
       {/* Account Types Section */}
-      <section id="account-types" className="py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="account-types" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden">
+        {/* Accounts Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 hover:opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/accounts_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+        <div className="content-container relative z-10">
+          {/* Floating Graphics */}
+          <div className="absolute top-40 left-10 w-24 h-16 opacity-15 hidden lg:block animate-float">
+            <GoldBullion className="w-full h-full -rotate-12" />
+          </div>
+          <div className="absolute top-60 right-10 w-32 h-16 opacity-10 hidden lg:block animate-float" style={{ animationDelay: '2.5s' }}>
+            <FloatingChart className="w-full h-full rotate-6" />
+          </div>
+
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">Account Types</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0">Choose Your Trading Account</h3>
-            <p className="text-brand-text-secondary text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
+            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0 text-white">Choose Your Trading Account</h3>
+            <p className="text-white/90 text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
               Select the account type that best suits your trading style and experience level.
             </p>
           </div>
@@ -414,7 +551,7 @@ export default function LandingPage() {
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">Minimum deposit: $100</span>
+                  <span className="text-sm text-brand-text-secondary">Minimum deposit: ₹8,500</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -432,7 +569,7 @@ export default function LandingPage() {
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">All trading instruments</span>
+                  <span className="text-sm text-brand-text-secondary">All Indian & Global instruments</span>
                 </li>
               </ul>
               <Link href="/register" className="block w-full py-2.5 sm:py-3 bg-white/5 hover:bg-white/10 text-white text-center font-bold text-sm rounded-lg transition-colors border border-white/10 hover:border-brand-gold/30">
@@ -451,7 +588,7 @@ export default function LandingPage() {
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">Minimum deposit: $1,000</span>
+                  <span className="text-sm text-brand-text-secondary">Minimum deposit: ₹85,000</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -469,13 +606,13 @@ export default function LandingPage() {
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">Commission: $3.5 per lot</span>
+                  <span className="text-sm text-brand-text-secondary">Commission: Fixed per lot</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">Priority support</span>
+                  <span className="text-sm text-brand-text-secondary">Priority Indian support</span>
                 </li>
               </ul>
               <Link href="/register" className="block w-full py-2.5 sm:py-3 bg-brand-gold text-brand-obsidian text-center font-black text-sm rounded-lg hover:shadow-gold transition-all">
@@ -493,7 +630,7 @@ export default function LandingPage() {
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">Minimum deposit: $5,000</span>
+                  <span className="text-sm text-brand-text-secondary">Minimum deposit: ₹4,00,000</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -511,25 +648,25 @@ export default function LandingPage() {
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">Commission: $0 per lot</span>
+                  <span className="text-sm text-brand-text-secondary">Commission: ₹0 per lot</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">$1,000 welcome bonus</span>
+                  <span className="text-sm text-brand-text-secondary">₹85,000 welcome bonus</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">Low fees</span>
+                  <span className="text-sm text-brand-text-secondary">Lowest Fees</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <svg className="w-5 h-5 text-brand-gold mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-sm text-brand-text-secondary">VIP support</span>
+                  <span className="text-sm text-brand-text-secondary">Executive VIP support</span>
                 </li>
               </ul>
               <Link href="/register" className="block w-full py-3 bg-white/5 hover:bg-white/10 text-white text-center font-bold rounded-lg transition-colors border border-white/10 hover:border-brand-gold/30">
@@ -541,14 +678,24 @@ export default function LandingPage() {
       </section>
 
       {/* Trading Platforms Section */}
-      <section id="platforms" className="py-16 sm:py-20 md:py-24 lg:py-32 bg-brand-obsidian scroll-mt-20">
+      <section id="platforms" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden">
+        {/* Platforms Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-80 hover:opacity-95 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/platforms_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-obsidian via-brand-obsidian/95 to-brand-obsidian z-0"></div>
         <div className="content-container">
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">Trading Platforms</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0">Trade on Any Device, Anywhere</h3>
-            <p className="text-brand-text-secondary text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
+            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0 text-white">Trade on Any Device, Anywhere</h3>
+            <p className="text-white/90 text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
               Access professional trading tools across desktop, web, and mobile platforms.
             </p>
           </div>
@@ -602,13 +749,24 @@ export default function LandingPage() {
       </section>
 
       {/* Trading Conditions Section */}
-      <section id="conditions" className="py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="conditions" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden">
+        {/* Conditions Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/markets_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">Trading Conditions</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl font-black tracking-tight px-4 sm:px-0">Competitive Trading Conditions</h3>
+            <h3 className="text-3xl sm:text-4xl font-black tracking-tight px-4 sm:px-0 text-white">Competitive Trading Conditions</h3>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -637,12 +795,27 @@ export default function LandingPage() {
       </section>
 
       {/* Leverage Section */}
-      <section id="leverage" className="py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
+      <section id="leverage" className="relative py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden">
+        {/* Leverage Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/ambani_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="absolute top-20 right-20 w-32 h-20 opacity-20 hidden lg:block animate-float">
+          <FloatingChart className="w-full h-full" />
+        </div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Leverage</h2>
-            <h3 className="text-4xl font-black tracking-tight">Flexible Leverage Up to 1:1000</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Flexible Leverage Up to 1:1000</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Trade with leverage that adapts to your experience and trading style. Maximum leverage available for qualified traders.
             </p>
           </div>
@@ -670,12 +843,27 @@ export default function LandingPage() {
       </section>
 
       {/* Spreads Section */}
-      <section id="spreads" className="py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="spreads" className="relative py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden">
+        {/* Spreads Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/about_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-l from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="absolute bottom-20 left-20 w-24 h-16 opacity-20 hidden lg:block animate-float" style={{ animationDelay: '1.5s' }}>
+          <GoldBullion className="w-full h-full rotate-[-12deg]" />
+        </div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Spreads</h2>
-            <h3 className="text-4xl font-black tracking-tight">Tight Spreads Starting from 0.0 Pips</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Tight Spreads Starting from 0.0 Pips</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Benefit from some of the tightest spreads in the industry, with spreads starting from 0.0 pips on major currency pairs.
             </p>
           </div>
@@ -724,18 +912,29 @@ export default function LandingPage() {
       </section>
 
       {/* Trading Tools Section */}
-      <section id="tools" className="py-16 sm:py-20 md:py-24 lg:py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
+      <section id="tools" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden">
+        {/* Tools Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/trading_chart_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">Trading Tools</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0">Professional Trading Tools</h3>
-            <p className="text-brand-text-secondary text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
+            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0 text-white">Professional Trading Tools</h3>
+            <p className="text-white/90 text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
               Access powerful tools to enhance your trading experience and maximize your potential.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <Link href="/news" className="glass-card p-6 sm:p-8 rounded-2xl border border-white/5 text-center">
               <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/5 rounded-xl flex items-center justify-center mb-4 sm:mb-6 mx-auto border border-white/10">
                 <svg className="w-6 h-6 sm:w-7 sm:h-7 text-brand-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -775,16 +974,6 @@ export default function LandingPage() {
             <div className="glass-card p-6 sm:p-8 rounded-2xl border border-white/5 text-center">
               <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/5 rounded-xl flex items-center justify-center mb-4 sm:mb-6 mx-auto border border-white/10">
                 <svg className="w-6 h-6 sm:w-7 sm:h-7 text-brand-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
-                </svg>
-              </div>
-              <h4 className="text-base sm:text-lg font-black mb-2 sm:mb-3">VPS Hosting</h4>
-              <p className="text-xs sm:text-sm text-brand-text-secondary mb-3 sm:mb-4">Low-latency VPS for automated trading</p>
-              <span className="text-xs sm:text-sm text-brand-text-secondary">Coming Soon</span>
-            </div>
-            <div className="glass-card p-6 sm:p-8 rounded-2xl border border-white/5 text-center">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/5 rounded-xl flex items-center justify-center mb-4 sm:mb-6 mx-auto border border-white/10">
-                <svg className="w-6 h-6 sm:w-7 sm:h-7 text-brand-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
@@ -797,8 +986,19 @@ export default function LandingPage() {
       </section>
 
       {/* Trading Calculator Section */}
-      <section id="calculator" className="py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="calculator" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden">
+        {/* Calc Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/trading_chart_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <svg className="w-3 h-3 sm:w-4 sm:h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -806,8 +1006,8 @@ export default function LandingPage() {
               </svg>
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">Trading Calculator</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0">Calculate Your Position Size</h3>
-            <p className="text-brand-text-secondary text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
+            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0 text-white">Calculate Your Position Size</h3>
+            <p className="text-white/90 text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
               Use our trading calculator to determine optimal position sizes and manage risk effectively. Enter your account balance, risk percentage, entry price, and stop loss to get instant calculations.
             </p>
           </div>
@@ -818,8 +1018,23 @@ export default function LandingPage() {
       </section>
 
       {/* Profit Calculator Section */}
-      <section id="profit-calculator" className="py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="profit-calculator" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden">
+        {/* Profit Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/stock_exchange_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
+          {/* Floating Graphics */}
+          <div className="absolute top-40 right-10 w-24 h-16 opacity-15 hidden lg:block animate-float">
+            <GoldBullion className="w-full h-full rotate-12" />
+          </div>
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <svg className="w-3 h-3 sm:w-4 sm:h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -827,8 +1042,8 @@ export default function LandingPage() {
               </svg>
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">Profit Calculator</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0">Calculate Your Profit & Loss</h3>
-            <p className="text-brand-text-secondary text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
+            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0 text-white">Calculate Your Profit & Loss</h3>
+            <p className="text-white/90 text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
               Use our profit calculator to estimate potential profit or loss on your trades. Enter your trade details including entry price, exit price, lot size, and leverage to get instant calculations.
             </p>
           </div>
@@ -838,49 +1053,101 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* VPS Hosting Section */}
-      <section id="vps" className="py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
-          <div className="mb-20 text-center">
-            <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">VPS Hosting</h2>
-            <h3 className="text-4xl font-black tracking-tight">Low-Latency VPS for Trading</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
-              Host your Expert Advisors and trading bots on our ultra-low latency VPS infrastructure.
-            </p>
+      {/* AI Trading Bot Section */}
+      <section id="trading-bot" className="relative py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden">
+        {/* Trading Bot Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/platforms_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.6)'
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10 text-center">
+          <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-6">
+            <span className="w-2 h-2 rounded-full bg-brand-gold animate-pulse"></span>
+            <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-widest">ELEVATE YOUR EDGE</span>
           </div>
-          <div className="max-w-2xl mx-auto glass-card p-12 rounded-3xl border border-white/5 text-center">
-            <p className="text-brand-text-secondary text-lg mb-6">VPS hosting service coming soon. Get dedicated virtual private servers optimized for automated trading with minimal latency.</p>
-            <Link href="/register" className="inline-block px-6 py-3 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-xs rounded-lg hover:shadow-gold transition-all">Get Notified</Link>
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-8 text-white uppercase">AI - Trading Bot</h2>
+          <p className="max-w-2xl mx-auto text-white/80 text-lg mb-12">
+            Harness the power of artificial intelligence. Our advanced neural-net bots analyze millions of data points per second to identify high-probability trading opportunities.
+          </p>
+          <div className="glass-card p-12 max-w-3xl mx-auto rounded-3xl border border-white/10 backdrop-blur-2xl">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-12">
+              <div className="text-center">
+                <div className="text-brand-gold text-2xl font-black mb-1">94.2%</div>
+                <div className="text-white/50 text-[10px] font-bold uppercase tracking-widest">Backtest Win-rate</div>
+              </div>
+              <div className="text-center">
+                <div className="text-brand-gold text-2xl font-black mb-1">24/7</div>
+                <div className="text-white/50 text-[10px] font-bold uppercase tracking-widest">Market Monitoring</div>
+              </div>
+              <div className="text-center">
+                <div className="text-brand-gold text-2xl font-black mb-1">&lt; 10ms</div>
+                <div className="text-white/50 text-[10px] font-bold uppercase tracking-widest">Execution Speed</div>
+              </div>
+            </div>
+            <p className="text-brand-text-secondary text-sm mb-8 italic">Trading bot service integration coming soon. Available exclusively for Platinum and VIP account holders.</p>
+            <Link href="/register" className="inline-block px-8 py-4 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-sm rounded-xl hover:shadow-gold transition-all">Get Early Access</Link>
           </div>
         </div>
       </section>
 
       {/* Trading Signals Section */}
-      <section id="signals" className="py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="signals" className="relative py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden">
+        {/* Signals Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/hero_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+        <div className="content-container relative z-10">
+          {/* Floating Graphics */}
+          <div className="absolute top-20 left-10 w-24 h-16 opacity-10 hidden lg:block animate-float">
+            <GoldBullion className="w-full h-full -rotate-12" />
+          </div>
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Trading Signals</h2>
-            <h3 className="text-4xl font-black tracking-tight">Professional Trading Signals</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Professional Trading Signals</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Receive real-time trading signals from our professional analysts and automated systems.
             </p>
           </div>
           <div className="max-w-2xl mx-auto glass-card p-12 rounded-3xl border border-white/5 text-center">
-            <p className="text-brand-text-secondary text-lg mb-6">Trading signals service coming soon. Get access to professional trading signals and market analysis to enhance your trading decisions.</p>
+            <p className="text-white/80 text-lg mb-6">Trading signals service coming soon. Get access to professional trading signals and market analysis to enhance your trading decisions.</p>
             <Link href="/register" className="inline-block px-6 py-3 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-xs rounded-lg hover:shadow-gold transition-all">Get Notified</Link>
           </div>
         </div>
       </section>
 
       {/* Education Section */}
-      <section id="guides" className="py-16 sm:py-20 md:py-24 lg:py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
+      <section id="guides" className="relative py-16 sm:py-20 md:py-24 lg:py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden" >
+        {/* Education Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/finance_minister_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-12 sm:mb-16 md:mb-20 text-center">
             <div className="inline-flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-brand-gold/10 border border-brand-gold/20 mb-4 sm:mb-6">
               <span className="text-[10px] sm:text-xs font-black text-brand-gold uppercase tracking-[0.2em] sm:tracking-[0.3em]">Education</span>
             </div>
-            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0">Learn to Trade Like a Pro</h3>
-            <p className="text-brand-text-secondary text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
+            <h3 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-6 px-4 sm:px-0 text-white">Learn to Trade Like a Pro</h3>
+            <p className="text-white/90 text-base sm:text-lg mt-4 sm:mt-6 max-w-2xl mx-auto font-medium px-4 sm:px-0">
               Comprehensive educational resources to help you master trading and achieve your financial goals.
             </p>
           </div>
@@ -906,75 +1173,162 @@ export default function LandingPage() {
               <span className="text-brand-text-secondary text-sm">Coming Soon</span>
             </div>
           </div>
+
+          {/* Global Educational Resources */}
+          <div className="mt-32 border-t border-white/5 pt-20">
+            <h4 className="text-xl font-black text-center mb-12 text-white uppercase tracking-[0.2em] sm:tracking-[0.3em]">Global Educational Resources</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <a href="https://www.investopedia.com" target="_blank" rel="noopener noreferrer" className="glass-card p-8 rounded-2xl border border-white/5 hover:border-brand-gold/30 hover:bg-white/[0.02] transition-all group overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
+                <h5 className="font-black text-brand-gold mb-3 group-hover:translate-x-1 transition-transform tracking-wider">Investopedia</h5>
+                <p className="text-xs text-white/60 leading-relaxed">The world's leading source of financial content and educational resources.</p>
+              </a>
+              <a href="https://www.babypips.com" target="_blank" rel="noopener noreferrer" className="glass-card p-8 rounded-2xl border border-white/5 hover:border-brand-gold/30 hover:bg-white/[0.02] transition-all group overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
+                <h5 className="font-black text-brand-gold mb-3 group-hover:translate-x-1 transition-transform tracking-wider">BabyPips</h5>
+                <p className="text-xs text-white/60 leading-relaxed">Highly acclaimed Forex school for beginners to advanced master traders.</p>
+              </a>
+              <a href="https://www.tradingview.com" target="_blank" rel="noopener noreferrer" className="glass-card p-8 rounded-2xl border border-white/5 hover:border-brand-gold/30 hover:bg-white/[0.02] transition-all group overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
+                <h5 className="font-black text-brand-gold mb-3 group-hover:translate-x-1 transition-transform tracking-wider">TradingView</h5>
+                <p className="text-xs text-white/60 leading-relaxed">Advanced charting platform and global social network for retail traders.</p>
+              </a>
+              <a href="https://www.bloomberg.com" target="_blank" rel="noopener noreferrer" className="glass-card p-8 rounded-2xl border border-white/5 hover:border-brand-gold/30 hover:bg-white/[0.02] transition-all group overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                  <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
+                <h5 className="font-black text-brand-gold mb-3 group-hover:translate-x-1 transition-transform tracking-wider">Bloomberg</h5>
+                <p className="text-xs text-white/60 leading-relaxed">Unrivaled global business news and real-time financial market analytics.</p>
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Webinars Section */}
-      <section id="webinars" className="py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="webinars" className="relative py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden" >
+        {/* Webinars Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/platforms_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Webinars</h2>
-            <h3 className="text-4xl font-black tracking-tight">Live Trading Webinars</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Live Trading Webinars</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Join our live webinars and learn from professional traders and market analysts.
             </p>
           </div>
           <div className="max-w-2xl mx-auto glass-card p-12 rounded-3xl border border-white/5 text-center">
-            <p className="text-brand-text-secondary text-lg mb-6">Webinar schedule coming soon. Register to receive notifications about upcoming live trading webinars and educational sessions.</p>
+            <p className="text-white/80 text-lg mb-6">Webinar schedule coming soon. Register to receive notifications about upcoming live trading webinars and educational sessions.</p>
             <Link href="/register" className="inline-block px-6 py-3 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-xs rounded-lg hover:shadow-gold transition-all">Get Notified</Link>
           </div>
         </div>
       </section>
 
       {/* Video Tutorials Section */}
-      <section id="tutorials" className="py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
+      <section id="tutorials" className="relative py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden" >
+        {/* Tutorials Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/finance_minister_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Video Tutorials</h2>
-            <h3 className="text-4xl font-black tracking-tight">Learn at Your Own Pace</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Learn at Your Own Pace</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Access our comprehensive library of video tutorials covering all aspects of trading.
             </p>
           </div>
           <div className="max-w-2xl mx-auto glass-card p-12 rounded-3xl border border-white/5 text-center">
-            <p className="text-brand-text-secondary text-lg mb-6">Video tutorial library coming soon. Learn trading fundamentals, advanced strategies, and platform features through our comprehensive video courses.</p>
+            <p className="text-white/80 text-lg mb-6">Video tutorial library coming soon. Learn trading fundamentals, advanced strategies, and platform features through our comprehensive video courses.</p>
             <Link href="/register" className="inline-block px-6 py-3 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-xs rounded-lg hover:shadow-gold transition-all">Get Notified</Link>
           </div>
         </div>
       </section>
 
       {/* Trading Strategies Section */}
-      <section id="strategies" className="py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="strategies" className="relative py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden" >
+        {/* Strategies Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/stock_exchange_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Trading Strategies</h2>
-            <h3 className="text-4xl font-black tracking-tight">Proven Trading Strategies</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Proven Trading Strategies</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Discover and implement proven trading strategies used by professional traders.
             </p>
           </div>
           <div className="max-w-2xl mx-auto glass-card p-12 rounded-3xl border border-white/5 text-center">
-            <p className="text-brand-text-secondary text-lg mb-6">Trading strategies library coming soon. Access detailed guides on various trading strategies including scalping, swing trading, trend following, and more.</p>
+            <p className="text-white/80 text-lg mb-6">Trading strategies library coming soon. Access detailed guides on various trading strategies including scalping, swing trading, trend following, and more.</p>
             <Link href="/register" className="inline-block px-6 py-3 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-xs rounded-lg hover:shadow-gold transition-all">Get Notified</Link>
           </div>
         </div>
       </section>
 
       {/* Regulations Section */}
-      <section id="regulations" className="py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
+      <section id="regulations" className="relative py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden" >
+        {/* Regulations Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/stock_exchange_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Regulations</h2>
-            <h3 className="text-4xl font-black tracking-tight">Regulatory Compliance</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Regulatory Compliance</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Investlyin operates in full compliance with international financial regulations and standards.
             </p>
           </div>
           <div className="max-w-4xl mx-auto glass-card p-12 rounded-3xl border border-white/5">
-            <p className="text-brand-text-secondary text-lg leading-relaxed font-medium mb-6">
+            <p className="text-white/80 text-lg leading-relaxed font-bold mb-6">
               Investlyin is committed to maintaining the highest standards of regulatory compliance. We operate under strict regulatory frameworks to ensure the safety and security of our clients' funds and personal information.
             </p>
-            <p className="text-brand-text-secondary text-lg leading-relaxed font-medium">
+            <p className="text-white/70 text-lg leading-relaxed font-medium">
               Our platform adheres to international financial regulations including anti-money laundering (AML) policies, know your customer (KYC) requirements, and data protection standards. Client funds are held in segregated accounts, completely separate from company operations.
             </p>
           </div>
@@ -982,96 +1336,141 @@ export default function LandingPage() {
       </section>
 
       {/* Careers Section */}
-      <section id="careers" className="py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="careers" className="relative py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden" >
+        {/* Careers Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/ambani_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 15%',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Careers</h2>
-            <h3 className="text-4xl font-black tracking-tight">Join Our Team</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Join Our Team</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Be part of a dynamic team shaping the future of online trading.
             </p>
           </div>
           <div className="max-w-2xl mx-auto glass-card p-12 rounded-3xl border border-white/5 text-center">
-            <p className="text-brand-text-secondary text-lg mb-6">We're always looking for talented individuals to join our team. Check back soon for open positions in technology, finance, customer support, and more.</p>
+            <p className="text-white/80 text-lg mb-6">We're always looking for talented individuals to join our team. Check back soon for open positions in technology, finance, customer support, and more.</p>
             <Link href="#contact" className="inline-block px-6 py-3 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-xs rounded-lg hover:shadow-gold transition-all">Contact Us</Link>
           </div>
         </div>
       </section>
 
       {/* Partners Section */}
-      <section id="partners" className="py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
+      <section id="partners" className="relative py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden" >
+        {/* Partners Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/about_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-l from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Partners</h2>
-            <h3 className="text-4xl font-black tracking-tight">Our Partners</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Our Partners</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               We work with leading financial institutions and technology providers to deliver the best trading experience.
             </p>
           </div>
           <div className="max-w-2xl mx-auto glass-card p-12 rounded-3xl border border-white/5 text-center">
-            <p className="text-brand-text-secondary text-lg mb-6">Partner with Investlyin to offer your clients access to institutional-grade trading services. We offer competitive partnership programs for brokers, affiliates, and technology providers.</p>
+            <p className="text-white/80 text-lg mb-6">Partner with Investlyin to offer your clients access to institutional-grade trading services. We offer competitive partnership programs for brokers, affiliates, and technology providers.</p>
             <Link href="#contact" className="inline-block px-6 py-3 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-xs rounded-lg hover:shadow-gold transition-all">Become a Partner</Link>
           </div>
         </div>
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="contact" className="relative py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden" >
+        {/* Contact Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/accounts_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Contact Us</h2>
-            <h3 className="text-4xl font-black tracking-tight">Get in Touch</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Get in Touch</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Have questions? Our support team is here to help you 24/7.
             </p>
           </div>
           <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="glass-card p-8 rounded-2xl border border-white/5 text-center">
-              <h4 className="text-lg font-black mb-3">Email Support</h4>
-              <p className="text-brand-text-secondary text-sm mb-4">support@investlyin.com</p>
-              <p className="text-brand-text-secondary text-xs">24/7 email support</p>
+              <h4 className="text-lg font-black mb-3 text-white">Email Support</h4>
+              <p className="text-white/70 text-sm mb-4">support@investlyin.com</p>
+              <p className="text-white/50 text-xs">24/7 email support</p>
             </div>
             <div className="glass-card p-8 rounded-2xl border border-white/5 text-center">
-              <h4 className="text-lg font-black mb-3">Live Chat</h4>
-              <p className="text-brand-text-secondary text-sm mb-4">Available 24/7</p>
-              <p className="text-brand-text-secondary text-xs">Instant support</p>
+              <h4 className="text-lg font-black mb-3 text-white">Live Chat</h4>
+              <p className="text-white/70 text-sm mb-4">Available 24/7</p>
+              <p className="text-white/50 text-xs">Instant support</p>
             </div>
             <div className="glass-card p-8 rounded-2xl border border-white/5 text-center">
-              <h4 className="text-lg font-black mb-3">Phone Support</h4>
-              <p className="text-brand-text-secondary text-sm mb-4">+1 (555) 123-4567</p>
-              <p className="text-brand-text-secondary text-xs">Mon-Fri 9AM-6PM EST</p>
+              <h4 className="text-lg font-black mb-3 text-white">Phone Support</h4>
+              <p className="text-white/70 text-sm mb-4">+1 (555) 123-4567</p>
+              <p className="text-white/50 text-xs">Mon-Fri 9AM-6PM EST</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Help Center Section */}
-      <section id="help" className="py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
+      <section id="help" className="relative py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden" >
+        {/* Help Center Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/security_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.8)'
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Help Center</h2>
-            <h3 className="text-4xl font-black tracking-tight">How Can We Help?</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">How Can We Help?</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Find answers to common questions and get the support you need.
             </p>
           </div>
           <div className="max-w-4xl mx-auto glass-card p-12 rounded-3xl border border-white/5">
             <div className="space-y-6">
               <div>
-                <h4 className="text-lg font-black mb-2">Account Management</h4>
-                <p className="text-brand-text-secondary text-sm">Learn how to manage your account, update personal information, and configure security settings.</p>
+                <h4 className="text-lg font-black mb-2 text-white">Account Management</h4>
+                <p className="text-white/70 text-sm">Learn how to manage your account, update personal information, and configure security settings.</p>
               </div>
               <div>
-                <h4 className="text-lg font-black mb-2">Trading Basics</h4>
-                <p className="text-brand-text-secondary text-sm">Get started with trading, understand order types, and learn about our trading platform.</p>
+                <h4 className="text-lg font-black mb-2 text-white">Trading Basics</h4>
+                <p className="text-white/70 text-sm">Get started with trading, understand order types, and learn about our trading platform.</p>
               </div>
               <div>
-                <h4 className="text-lg font-black mb-2">Deposits & Withdrawals</h4>
-                <p className="text-brand-text-secondary text-sm">Information about funding your account and withdrawing your profits.</p>
+                <h4 className="text-lg font-black mb-2 text-white">Deposits & Withdrawals</h4>
+                <p className="text-white/70 text-sm">Information about funding your account and withdrawing your profits.</p>
               </div>
               <div>
-                <h4 className="text-lg font-black mb-2">Platform Guides</h4>
-                <p className="text-brand-text-secondary text-sm">Step-by-step guides for using our web platform, mobile app, and trading tools.</p>
+                <h4 className="text-lg font-black mb-2 text-white">Platform Guides</h4>
+                <p className="text-white/70 text-sm">Step-by-step guides for using our web platform, mobile app, and trading tools.</p>
               </div>
             </div>
           </div>
@@ -1079,7 +1478,7 @@ export default function LandingPage() {
       </section>
 
       {/* Live Chat Section */}
-      <section id="chat" className="py-32 bg-[#0C0E12] scroll-mt-20">
+      <section id="chat" className="py-32 bg-[#0C0E12] scroll-mt-20" >
         <div className="content-container">
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Live Chat</h2>
@@ -1096,64 +1495,94 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-32 bg-brand-obsidian scroll-mt-20">
-        <div className="content-container">
+      <section id="faq" className="relative py-32 bg-brand-obsidian scroll-mt-20 overflow-hidden" >
+        {/* FAQ Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/security_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.8)'
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
+          {/* Floating Graphics */}
+          <div className="absolute top-20 right-10 w-24 h-16 opacity-10 hidden lg:block animate-float">
+            <GoldBullion className="w-full h-full rotate-12" />
+          </div>
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">FAQ</h2>
-            <h3 className="text-4xl font-black tracking-tight">Frequently Asked Questions</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Frequently Asked Questions</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Find answers to the most common questions about our platform and services.
             </p>
           </div>
           <div className="max-w-4xl mx-auto space-y-4">
             <div className="glass-card p-6 rounded-xl border border-white/5">
-              <h4 className="text-lg font-black mb-2">How do I open an account?</h4>
-              <p className="text-brand-text-secondary text-sm">Click the "Open Account" button in the navigation, fill out the registration form, verify your email, and complete the KYC process.</p>
+              <h4 className="text-lg font-black mb-2 text-white">How do I open an account?</h4>
+              <p className="text-white/80 text-sm">Click the "Open Account" button in the navigation, fill out the registration form, verify your email, and complete the KYC process.</p>
             </div>
             <div className="glass-card p-6 rounded-xl border border-white/5">
-              <h4 className="text-lg font-black mb-2">What is the minimum deposit?</h4>
-              <p className="text-brand-text-secondary text-sm">The minimum deposit varies by account type. Standard accounts start at $100, Pro accounts at $1,000, and Zero accounts at $5,000.</p>
+              <h4 className="text-lg font-black mb-2 text-white">What is the minimum deposit?</h4>
+              <p className="text-white/80 text-sm">The minimum deposit varies by account type. Standard accounts start at $100, Pro accounts at $1,000, and Zero accounts at $5,000.</p>
             </div>
             <div className="glass-card p-6 rounded-xl border border-white/5">
-              <h4 className="text-lg font-black mb-2">How do I withdraw funds?</h4>
-              <p className="text-brand-text-secondary text-sm">Navigate to the Wallet page, click "Withdraw", select your withdrawal method, enter the amount, and follow the verification steps. Profit withdrawals are processed within 24-48 hours.</p>
+              <h4 className="text-lg font-black mb-2 text-white">How do I withdraw funds?</h4>
+              <p className="text-white/80 text-sm">Navigate to the Wallet page, click "Withdraw", select your withdrawal method, enter the amount, and follow the verification steps. Profit withdrawals are processed within 24-48 hours.</p>
             </div>
             <div className="glass-card p-6 rounded-xl border border-white/5">
-              <h4 className="text-lg font-black mb-2">What leverage is available?</h4>
-              <p className="text-brand-text-secondary text-sm">Maximum leverage up to 1:1000 is available for qualified traders. Leverage varies based on your account type and trading experience.</p>
+              <h4 className="text-lg font-black mb-2 text-white">What leverage is available?</h4>
+              <p className="text-white/80 text-sm">Maximum leverage up to 1:1000 is available for qualified traders. Leverage varies based on your account type and trading experience.</p>
             </div>
             <div className="glass-card p-6 rounded-xl border border-white/5">
-              <h4 className="text-lg font-black mb-2">Are my funds safe?</h4>
-              <p className="text-brand-text-secondary text-sm">Yes, all client funds are held in segregated accounts, completely separate from company operations. We use bank-level encryption and security measures.</p>
+              <h4 className="text-lg font-black mb-2 text-white">Are my funds safe?</h4>
+              <p className="text-white/80 text-sm">Yes, all client funds are held in segregated accounts, completely separate from company operations. We use bank-level encryption and security measures.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Account Verification Section */}
-      <section id="verification" className="py-32 bg-[#0C0E12] scroll-mt-20">
-        <div className="content-container">
+      <section id="verification" className="relative py-32 bg-[#0C0E12] scroll-mt-20 overflow-hidden" >
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/security_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-l from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
+
+        <div className="content-container relative z-10">
+          {/* Floating Graphics */}
+          <div className="absolute bottom-20 left-10 w-32 h-16 opacity-15 hidden lg:block animate-float">
+            <FloatingChart className="w-full h-full rotate-6" />
+          </div>
           <div className="mb-20 text-center">
             <h2 className="text-xs font-black text-brand-gold uppercase tracking-[0.4em] mb-4">Account Verification</h2>
-            <h3 className="text-4xl font-black tracking-tight">Verify Your Account</h3>
-            <p className="text-brand-text-secondary text-lg mt-6 max-w-2xl mx-auto font-medium">
+            <h3 className="text-4xl font-black tracking-tight text-white">Verify Your Account</h3>
+            <p className="text-white/90 text-lg mt-6 max-w-2xl mx-auto font-medium">
               Complete your account verification to unlock all platform features and increase withdrawal limits.
             </p>
           </div>
           <div className="max-w-4xl mx-auto glass-card p-12 rounded-3xl border border-white/5">
             <div className="space-y-6">
               <div>
-                <h4 className="text-lg font-black mb-2">KYC Verification</h4>
-                <p className="text-brand-text-secondary text-sm mb-4">Submit your KYC documents (passport, driver's license, or national ID) through your Account Settings page. Our team will review your documents within 24-48 hours.</p>
+                <h4 className="text-lg font-black mb-2 text-white">KYC Verification</h4>
+                <p className="text-white/70 text-sm mb-4">Submit your KYC documents (passport, driver's license, or national ID) through your Account Settings page. Our team will review your documents within 24-48 hours.</p>
                 <Link href="/profile" className="text-brand-gold text-sm font-bold hover:underline">Go to Account Settings →</Link>
               </div>
               <div>
-                <h4 className="text-lg font-black mb-2">Email Verification</h4>
-                <p className="text-brand-text-secondary text-sm">Verify your email address by clicking the link sent to your registered email. Check your spam folder if you don't see the email.</p>
+                <h4 className="text-lg font-black mb-2 text-white">Email Verification</h4>
+                <p className="text-white/70 text-sm">Verify your email address by clicking the link sent to your registered email. Check your spam folder if you don't see the email.</p>
               </div>
               <div>
-                <h4 className="text-lg font-black mb-2">Two-Factor Authentication</h4>
-                <p className="text-brand-text-secondary text-sm">Enable 2FA for enhanced security. This is required for withdrawals and sensitive account operations.</p>
+                <h4 className="text-lg font-black mb-2 text-white">Two-Factor Authentication</h4>
+                <p className="text-white/70 text-sm">Enable 2FA for enhanced security. This is required for withdrawals and sensitive account operations.</p>
               </div>
             </div>
           </div>
@@ -1161,17 +1590,27 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Footer */}
-      <section className="py-32 border-t border-white/5 bg-brand-obsidian relative overflow-hidden">
-        {/* Ambient background glow */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-gold/5 rounded-full blur-[100px] pointer-events-none"></div>
+      <section className="relative py-32 border-t border-white/5 bg-brand-obsidian overflow-hidden" >
+        {/* Footer CTA Background */}
+        <div
+          className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000"
+          style={{
+            backgroundImage: 'url("/images/hero_bg.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.7)'
+          }}
+        ></div >
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-obsidian/70 via-brand-obsidian/50 to-brand-obsidian z-0"></div>
 
         <div className="content-container relative z-10">
+          {/* Floating Graphics */}
+          <div className="absolute top-1/2 left-20 w-24 h-16 opacity-10 hidden lg:block animate-float">
+            <GoldBullion className="w-full h-full -rotate-12" />
+          </div>
           <div className="glass-panel p-10 md:p-20 rounded-[40px] border border-brand-gold/10 text-center relative overflow-hidden group">
-            {/* Subtle animated border gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-gold/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-8">Ready to Elevate <br />Your Trading?</h2>
-            <p className="text-brand-text-secondary text-lg mb-12 max-w-xl mx-auto font-medium leading-relaxed">
+            <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-8 text-white">Ready to Elevate <br />Your Trading?</h2>
+            <p className="text-white/90 text-lg mb-12 max-w-xl mx-auto font-medium leading-relaxed">
               Join 1,000,000+ traders who trust Investlyin for their clinical execution and institutional depth.
             </p>
             <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-6">
@@ -1273,7 +1712,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-    </div>
+    </div >
   );
 }
 

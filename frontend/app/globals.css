@@ -8,7 +8,8 @@
   --color-brand-green: #00D9A5;
   --color-brand-red: #FF4444;
   --color-brand-text-primary: #FFFFFF;
-  --color-brand-text-secondary: #8B92A7;
+  --color-brand-text-secondary: #A0AEC0;
+  /* Brighter, more readable gray-blue */
   --color-brand-blue: #3B82F6;
   --color-brand-purple: #8B5CF6;
 
@@ -37,7 +38,17 @@ body {
 }
 
 /* Reset margins and padding only for specific elements */
-body, h1, h2, h3, h4, h5, h6, p, ul, ol, li {
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol,
+li {
   margin: 0;
   padding: 0;
 }
@@ -144,9 +155,12 @@ body, h1, h2, h3, h4, h5, h6, p, ul, ol, li {
 }
 
 @keyframes gradient {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -166,6 +180,7 @@ body, h1, h2, h3, h4, h5, h6, p, ul, ol, li {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -204,7 +219,12 @@ body {
   letter-spacing: 0.01em;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
@@ -306,9 +326,12 @@ button:focus {
 
 /* Subtle pulse animation for real-time price updates */
 @keyframes pulse-subtle {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.85;
   }
@@ -382,17 +405,45 @@ button:focus {
 }
 
 /* Ensure consistent spacing utilities */
-.space-y-2 > * + * { margin-top: 0.5rem; }
-.space-y-3 > * + * { margin-top: 0.75rem; }
-.space-y-4 > * + * { margin-top: 1rem; }
-.space-y-6 > * + * { margin-top: 1.5rem; }
-.space-y-8 > * + * { margin-top: 2rem; }
+.space-y-2>*+* {
+  margin-top: 0.5rem;
+}
 
-.space-x-2 > * + * { margin-left: 0.5rem; }
-.space-x-3 > * + * { margin-left: 0.75rem; }
-.space-x-4 > * + * { margin-left: 1rem; }
-.space-x-6 > * + * { margin-left: 1.5rem; }
-.space-x-8 > * + * { margin-left: 2rem; }
+.space-y-3>*+* {
+  margin-top: 0.75rem;
+}
+
+.space-y-4>*+* {
+  margin-top: 1rem;
+}
+
+.space-y-6>*+* {
+  margin-top: 1.5rem;
+}
+
+.space-y-8>*+* {
+  margin-top: 2rem;
+}
+
+.space-x-2>*+* {
+  margin-left: 0.5rem;
+}
+
+.space-x-3>*+* {
+  margin-left: 0.75rem;
+}
+
+.space-x-4>*+* {
+  margin-left: 1rem;
+}
+
+.space-x-6>*+* {
+  margin-left: 1.5rem;
+}
+
+.space-x-8>*+* {
+  margin-left: 2rem;
+}
 
 /* Badge Styles */
 .badge {
@@ -428,9 +479,12 @@ button:focus {
 
 /* Animation Improvements */
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -445,6 +499,7 @@ button:focus {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -479,58 +534,198 @@ button:focus {
 }
 
 /* Consistent Spacing Utilities */
-.gap-2 { gap: 0.5rem; }
-.gap-3 { gap: 0.75rem; }
-.gap-4 { gap: 1rem; }
-.gap-6 { gap: 1.5rem; }
-.gap-8 { gap: 2rem; }
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-6 {
+  gap: 1.5rem;
+}
+
+.gap-8 {
+  gap: 2rem;
+}
 
 /* Fix for common padding issues */
-.p-0 { padding: 0 !important; }
-.p-1 { padding: 0.25rem !important; }
-.p-2 { padding: 0.5rem !important; }
-.p-3 { padding: 0.75rem !important; }
-.p-4 { padding: 1rem !important; }
-.p-5 { padding: 1.25rem !important; }
-.p-6 { padding: 1.5rem !important; }
-.p-8 { padding: 2rem !important; }
+.p-0 {
+  padding: 0 !important;
+}
 
-.px-0 { padding-left: 0 !important; padding-right: 0 !important; }
-.px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
-.px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
-.px-6 { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
-.px-8 { padding-left: 2rem !important; padding-right: 2rem !important; }
+.p-1 {
+  padding: 0.25rem !important;
+}
 
-.py-0 { padding-top: 0 !important; padding-bottom: 0 !important; }
-.py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
-.py-4 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
-.py-6 { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
-.py-8 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+.p-2 {
+  padding: 0.5rem !important;
+}
 
-.m-0 { margin: 0 !important; }
-.m-2 { margin: 0.5rem !important; }
-.m-4 { margin: 1rem !important; }
-.m-6 { margin: 1.5rem !important; }
-.m-8 { margin: 2rem !important; }
+.p-3 {
+  padding: 0.75rem !important;
+}
 
-.mx-auto { margin-left: auto !important; margin-right: auto !important; }
-.my-0 { margin-top: 0 !important; margin-bottom: 0 !important; }
-.my-2 { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
-.my-4 { margin-top: 1rem !important; margin-bottom: 1rem !important; }
-.my-6 { margin-top: 1.5rem !important; margin-bottom: 1.5rem !important; }
-.my-8 { margin-top: 2rem !important; margin-bottom: 2rem !important; }
+.p-4 {
+  padding: 1rem !important;
+}
 
-.mb-0 { margin-bottom: 0 !important; }
-.mb-2 { margin-bottom: 0.5rem !important; }
-.mb-4 { margin-bottom: 1rem !important; }
-.mb-6 { margin-bottom: 1.5rem !important; }
-.mb-8 { margin-bottom: 2rem !important; }
+.p-5 {
+  padding: 1.25rem !important;
+}
 
-.mt-0 { margin-top: 0 !important; }
-.mt-2 { margin-top: 0.5rem !important; }
-.mt-4 { margin-top: 1rem !important; }
-.mt-6 { margin-top: 1.5rem !important; }
-.mt-8 { margin-top: 2rem !important; }
+.p-6 {
+  padding: 1.5rem !important;
+}
+
+.p-8 {
+  padding: 2rem !important;
+}
+
+.px-0 {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.px-2 {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+
+.px-4 {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+.px-6 {
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+.px-8 {
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}
+
+.py-0 {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.py-2 {
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+.py-4 {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+.py-6 {
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+.py-8 {
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
+}
+
+.m-0 {
+  margin: 0 !important;
+}
+
+.m-2 {
+  margin: 0.5rem !important;
+}
+
+.m-4 {
+  margin: 1rem !important;
+}
+
+.m-6 {
+  margin: 1.5rem !important;
+}
+
+.m-8 {
+  margin: 2rem !important;
+}
+
+.mx-auto {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.my-0 {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.my-2 {
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.my-4 {
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.my-6 {
+  margin-top: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.my-8 {
+  margin-top: 2rem !important;
+  margin-bottom: 2rem !important;
+}
+
+.mb-0 {
+  margin-bottom: 0 !important;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+
+.mb-4 {
+  margin-bottom: 1rem !important;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem !important;
+}
+
+.mb-8 {
+  margin-bottom: 2rem !important;
+}
+
+.mt-0 {
+  margin-top: 0 !important;
+}
+
+.mt-2 {
+  margin-top: 0.5rem !important;
+}
+
+.mt-4 {
+  margin-top: 1rem !important;
+}
+
+.mt-6 {
+  margin-top: 1.5rem !important;
+}
+
+.mt-8 {
+  margin-top: 2rem !important;
+}
 
 /* Fix table cell padding consistency */
 .trade-table th,
@@ -582,6 +777,7 @@ a:not([class*="w-"]):not([class*="h-"]):not([class*="size-"]),
 }
 
 @media (min-width: 768px) {
+
   button:not([class*="w-"]):not([class*="h-"]):not([class*="size-"]),
   a:not([class*="w-"]):not([class*="h-"]):not([class*="size-"]),
   [role="button"]:not([class*="w-"]):not([class*="h-"]):not([class*="size-"]) {
@@ -597,10 +793,12 @@ select {
   touch-action: manipulation;
   -webkit-tap-highlight-color: rgba(255, 184, 0, 0.2);
   min-height: 44px;
-  font-size: 16px; /* Prevents zoom on iOS when focusing */
+  font-size: 16px;
+  /* Prevents zoom on iOS when focusing */
 }
 
 @media (min-width: 768px) {
+
   input,
   textarea,
   select {
@@ -646,12 +844,13 @@ a,
 
 /* Touch-friendly table cells */
 @media (max-width: 767px) {
+
   .trade-table td,
   .trade-table th {
     padding: 0.75rem 0.5rem !important;
     min-height: 44px;
   }
-  
+
   .trade-table td button,
   .trade-table td a {
     min-height: 36px;
@@ -662,11 +861,12 @@ a,
 
 /* Touch-friendly cards */
 @media (max-width: 767px) {
+
   .card,
   .glass-card {
     padding: 1rem !important;
   }
-  
+
   .card button,
   .glass-card button {
     width: 100%;
@@ -677,13 +877,14 @@ a,
 
 /* Touch-friendly modals */
 @media (max-width: 767px) {
+
   [role="dialog"],
   .modal {
     padding: 1rem !important;
     max-width: 100vw;
     margin: 0.5rem;
   }
-  
+
   [role="dialog"] button,
   .modal button {
     min-height: 48px;
@@ -699,12 +900,12 @@ a,
     font-size: 16px;
     padding: 0.75rem 1rem;
   }
-  
+
   [role="menu"],
   [role="listbox"] {
     min-width: 200px;
   }
-  
+
   [role="menuitem"],
   [role="option"] {
     min-height: 44px;
@@ -719,18 +920,18 @@ a,
     font-size: 16px;
     padding: 0.75rem 1rem;
   }
-  
+
   label {
     font-size: 0.875rem;
     margin-bottom: 0.5rem;
     display: block;
   }
-  
+
   input[type="file"] {
     min-height: 48px;
     padding: 0.75rem;
   }
-  
+
   input[type="file"]::file-selector-button {
     min-height: 44px;
     padding: 0.5rem 1rem;
@@ -740,14 +941,33 @@ a,
 
 /* Touch-friendly spacing for mobile */
 @media (max-width: 767px) {
-  .space-y-2 > * + * { margin-top: 0.75rem; }
-  .space-y-3 > * + * { margin-top: 1rem; }
-  .space-y-4 > * + * { margin-top: 1.25rem; }
-  .space-y-6 > * + * { margin-top: 1.5rem; }
-  
-  .gap-2 { gap: 0.75rem; }
-  .gap-3 { gap: 1rem; }
-  .gap-4 { gap: 1.25rem; }
+  .space-y-2>*+* {
+    margin-top: 0.75rem;
+  }
+
+  .space-y-3>*+* {
+    margin-top: 1rem;
+  }
+
+  .space-y-4>*+* {
+    margin-top: 1.25rem;
+  }
+
+  .space-y-6>*+* {
+    margin-top: 1.5rem;
+  }
+
+  .gap-2 {
+    gap: 0.75rem;
+  }
+
+  .gap-3 {
+    gap: 1rem;
+  }
+
+  .gap-4 {
+    gap: 1.25rem;
+  }
 }
 
 /* Prevent pull-to-refresh on overscroll (optional) */
@@ -759,12 +979,13 @@ a,
 
 /* Touch-friendly icon buttons */
 @media (max-width: 767px) {
+
   button svg,
   a svg {
     min-width: 20px;
     min-height: 20px;
   }
-  
+
   button:has(svg):not([class*="w-"]):not([class*="h-"]) {
     min-width: 44px;
     min-height: 44px;
@@ -774,6 +995,7 @@ a,
 
 /* Touch-friendly navigation */
 @media (max-width: 767px) {
+
   nav a,
   nav button {
     min-height: 44px;
@@ -781,7 +1003,7 @@ a,
     display: flex;
     align-items: center;
   }
-  
+
   nav [role="menuitem"] {
     min-height: 48px;
     padding: 1rem;
@@ -790,6 +1012,7 @@ a,
 
 /* Touch-friendly tabs */
 @media (max-width: 767px) {
+
   [role="tab"],
   .tab {
     min-height: 44px;
@@ -800,6 +1023,7 @@ a,
 
 /* Touch-friendly checkboxes and radio buttons */
 @media (max-width: 767px) {
+
   input[type="checkbox"],
   input[type="radio"] {
     width: 24px;
@@ -807,7 +1031,7 @@ a,
     min-width: 24px;
     min-height: 24px;
   }
-  
+
   label:has(input[type="checkbox"]),
   label:has(input[type="radio"]) {
     min-height: 44px;
@@ -820,6 +1044,7 @@ a,
 
 /* Touch-friendly scrollable areas */
 @media (max-width: 767px) {
+
   .overflow-x-auto,
   .overflow-y-auto {
     -webkit-overflow-scrolling: touch;
@@ -829,6 +1054,7 @@ a,
 
 /* Touch-friendly close buttons */
 @media (max-width: 767px) {
+
   button[aria-label*="close"],
   button[aria-label*="Close"],
   .close-button {
@@ -853,7 +1079,7 @@ a,
   .grid {
     gap: 0.75rem;
   }
-  
+
   .grid-cols-2 {
     gap: 0.5rem;
   }
@@ -861,17 +1087,18 @@ a,
 
 /* Touch-friendly flex spacing */
 @media (max-width: 767px) {
-  .flex > * + * {
+  .flex>*+* {
     margin-left: 0.75rem;
   }
-  
-  .flex-col > * + * {
+
+  .flex-col>*+* {
     margin-top: 0.75rem;
   }
 }
 
 /* Improve touch target for small interactive elements */
 @media (max-width: 767px) {
+
   .badge,
   .tag {
     min-height: 32px;
@@ -881,6 +1108,7 @@ a,
 
 /* Touch-friendly tooltips and popovers */
 @media (max-width: 767px) {
+
   [role="tooltip"],
   [data-tooltip] {
     font-size: 0.875rem;
@@ -891,6 +1119,7 @@ a,
 
 /* Additional touch improvements */
 @media (max-width: 767px) {
+
   /* Ensure all clickable elements have proper touch targets */
   [onclick],
   [onClick],
@@ -899,33 +1128,33 @@ a,
     -webkit-tap-highlight-color: rgba(255, 184, 0, 0.3);
     touch-action: manipulation;
   }
-  
+
   /* Improve touch targets for small buttons */
   button[class*="w-"]:not([class*="w-full"]),
   a[class*="w-"]:not([class*="w-full"]) {
     min-width: 44px;
   }
-  
+
   button[class*="h-"]:not([class*="h-full"]),
   a[class*="h-"]:not([class*="h-full"]) {
     min-height: 44px;
   }
-  
+
   /* Touch-friendly spacing between interactive elements */
-  .flex > button + button,
-  .flex > a + a,
-  .flex > button + a,
-  .flex > a + button {
+  .flex>button+button,
+  .flex>a+a,
+  .flex>button+a,
+  .flex>a+button {
     margin-left: 0.75rem;
   }
-  
-  .flex-col > button + button,
-  .flex-col > a + a,
-  .flex-col > button + a,
-  .flex-col > a + button {
+
+  .flex-col>button+button,
+  .flex-col>a+a,
+  .flex-col>button+a,
+  .flex-col>a+button {
     margin-top: 0.75rem;
   }
-  
+
   /* Prevent text selection on buttons during touch */
   button,
   .btn-primary,
@@ -936,7 +1165,7 @@ a,
     -ms-user-select: none;
     user-select: none;
   }
-  
+
   /* Touch feedback for all interactive elements */
   button:active,
   a:active,
@@ -947,7 +1176,7 @@ a,
     transform: scale(0.97);
     transition: transform 0.1s ease;
   }
-  
+
   /* Improve touch targets for table actions */
   .trade-table button,
   .trade-table a {
@@ -955,7 +1184,7 @@ a,
     min-width: 36px;
     padding: 0.5rem 0.75rem;
   }
-  
+
   /* Touch-friendly modal close buttons */
   [role="dialog"] button[aria-label*="close"],
   [role="dialog"] button[aria-label*="Close"],
@@ -968,28 +1197,30 @@ a,
     min-height: 44px;
     padding: 0.75rem;
   }
-  
+
   /* Touch-friendly file inputs */
   input[type="file"] {
     min-height: 48px;
   }
-  
+
   input[type="file"]::file-selector-button {
     min-height: 44px;
     min-width: 120px;
     padding: 0.625rem 1rem;
     font-size: 0.875rem;
   }
-  
+
   /* Touch-friendly number inputs */
   input[type="number"] {
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px;
+    /* Prevents zoom on iOS */
     min-height: 48px;
   }
-  
+
   /* Touch-friendly select dropdowns */
   select {
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px;
+    /* Prevents zoom on iOS */
     min-height: 48px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFB800' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -999,14 +1230,15 @@ a,
     -moz-appearance: none;
     appearance: none;
   }
-  
+
   /* Touch-friendly textarea */
   textarea {
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px;
+    /* Prevents zoom on iOS */
     min-height: 100px;
     resize: vertical;
   }
-  
+
   /* Improve touch targets for icon-only buttons */
   button:has(svg):not(:has(span)):not(:has(text)) {
     min-width: 44px;
@@ -1016,7 +1248,7 @@ a,
     align-items: center;
     justify-content: center;
   }
-  
+
   /* Touch-friendly list items */
   li[role="button"],
   li[onclick],
@@ -1026,7 +1258,7 @@ a,
     display: flex;
     align-items: center;
   }
-  
+
   /* Prevent accidental scrolling during touch interactions */
   .no-scroll {
     overflow: hidden;
@@ -1034,7 +1266,7 @@ a,
     width: 100%;
     height: 100%;
   }
-  
+
   /* Touch-friendly accordion/collapsible */
   [role="button"][aria-expanded] {
     min-height: 48px;
@@ -1043,14 +1275,14 @@ a,
     align-items: center;
     justify-content: space-between;
   }
-  
+
   /* Touch-friendly drag handles (if any) */
   [draggable="true"] {
     touch-action: none;
     min-height: 44px;
     cursor: grab;
   }
-  
+
   [draggable="true"]:active {
     cursor: grabbing;
   }

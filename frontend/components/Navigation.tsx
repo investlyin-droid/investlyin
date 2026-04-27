@@ -43,7 +43,7 @@ export default function Navigation() {
         { label: 'Economic Calendar', href: '/news' },
         { label: 'Trading Calculator', href: '#calculator' },
         { label: 'Profit Calculator', href: '#profit-calculator' },
-        { label: 'VPS Hosting', href: '#vps' },
+        { label: 'AI - Trading Bot', href: '#trading-bot' },
         { label: 'Trading Signals', href: '#signals' },
         { label: 'Market Analysis', href: '/news' },
       ],
@@ -115,7 +115,7 @@ export default function Navigation() {
           <Link href="/" className="text-xl sm:text-2xl font-black italic tracking-tighter text-brand-gold flex-shrink-0">
             <span className="text-white">Invest</span><span className="font-black text-brand-gold">lyin</span>
           </Link>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-0.5 xl:space-x-1">
             {Object.entries(dropdowns).map(([key, dropdown]) => (
@@ -125,12 +125,11 @@ export default function Navigation() {
                 onMouseEnter={() => handleMouseEnter(key)}
                 onMouseLeave={handleMouseLeave}
               >
-                <button 
-                  className={`px-3 xl:px-4 py-2.5 text-sm xl:text-base font-semibold transition-all duration-200 flex items-center space-x-1.5 min-h-[44px] rounded-md relative ${
-                    activeDropdown === key 
-                      ? 'text-white bg-white/10' 
-                      : 'text-brand-text-secondary hover:text-white hover:bg-white/5'
-                  }`}
+                <button
+                  className={`px-3 xl:px-4 py-2.5 text-sm xl:text-base font-semibold transition-all duration-200 flex items-center space-x-1.5 min-h-[44px] rounded-md relative ${activeDropdown === key
+                    ? 'text-white bg-white/10'
+                    : 'text-brand-text-secondary hover:text-white hover:bg-white/5'
+                    }`}
                   onMouseEnter={() => handleMouseEnter(key)}
                 >
                   <span className="relative z-10">{dropdown.title}</span>
@@ -145,12 +144,12 @@ export default function Navigation() {
                 </button>
 
                 {activeDropdown === key && (
-                  <div 
+                  <div
                     className="absolute top-full left-0 pt-2 z-[60] animate-fade-in-down"
                     onMouseEnter={() => setActiveDropdown(key)}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <div 
+                    <div
                       className="bg-brand-surface/98 backdrop-blur-xl border border-white/20 rounded-lg shadow-2xl py-2 min-w-[240px] xl:min-w-[280px] overflow-hidden"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -168,7 +167,7 @@ export default function Navigation() {
                           }}
                         >
                           <span className="relative z-10">{item.label}</span>
-                          <svg 
+                          <svg
                             className="w-4 h-4 ml-auto opacity-0 group-hover/item:opacity-100 transition-opacity duration-150"
                             fill="none"
                             stroke="currentColor"
@@ -236,99 +235,99 @@ export default function Navigation() {
       {mounted && mobileMenuOpen && createPortal(
         <>
           {/* Backdrop */}
-          <div 
+          <div
             className="lg:hidden fixed top-16 sm:top-20 left-0 right-0 bottom-0 bg-black/50 z-[100]"
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Menu */}
-          <div 
+          <div
             className="lg:hidden fixed top-16 sm:top-20 left-0 right-0 bottom-0 bg-brand-obsidian/98 backdrop-blur-md z-[110] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="content-container py-6 px-4">
-            {Object.entries(dropdowns).map(([key, dropdown]) => (
-              <div key={key} className="mb-4" onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDropdownClick(key);
-                  }}
-                  className="w-full flex items-center justify-between px-4 py-3.5 text-base font-bold text-white hover:text-brand-gold active:text-brand-gold transition-colors bg-white/5 rounded-lg mb-2 min-h-[44px] touch-manipulation"
-                >
-                  <span>{dropdown.title}</span>
-                  <svg
-                    className={`w-5 h-5 transition-transform ${activeDropdown === key ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+              {Object.entries(dropdowns).map(([key, dropdown]) => (
+                <div key={key} className="mb-4" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDropdownClick(key);
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-base font-bold text-white hover:text-brand-gold active:text-brand-gold transition-colors bg-white/5 rounded-lg mb-2 min-h-[44px] touch-manipulation"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {activeDropdown === key && (
-                  <div className="ml-4 space-y-1 animate-fade-in" onClick={(e) => e.stopPropagation()}>
-                    {dropdown.items.map((item, idx) => (
-                      <Link
-                        key={idx}
-                        href={item.href}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Only close menu for non-hash links (page navigation)
-                          // For hash links, keep menu open to allow smooth scroll
-                          if (!item.href.startsWith('#')) {
-                            setMobileMenuOpen(false);
-                            setActiveDropdown(null);
-                          } else {
-                            // For hash links, close menu after a short delay to allow scroll
-                            setTimeout(() => {
+                    <span>{dropdown.title}</span>
+                    <svg
+                      className={`w-5 h-5 transition-transform ${activeDropdown === key ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {activeDropdown === key && (
+                    <div className="ml-4 space-y-1 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                      {dropdown.items.map((item, idx) => (
+                        <Link
+                          key={idx}
+                          href={item.href}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Only close menu for non-hash links (page navigation)
+                            // For hash links, keep menu open to allow smooth scroll
+                            if (!item.href.startsWith('#')) {
                               setMobileMenuOpen(false);
                               setActiveDropdown(null);
-                            }, 300);
-                          }
-                        }}
-                        className="block px-4 py-3 text-sm text-brand-text-secondary hover:text-white active:text-white hover:bg-brand-gold/10 transition-all rounded-lg border-l-2 border-transparent hover:border-brand-gold min-h-[44px] flex items-center touch-manipulation"
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
+                            } else {
+                              // For hash links, close menu after a short delay to allow scroll
+                              setTimeout(() => {
+                                setMobileMenuOpen(false);
+                                setActiveDropdown(null);
+                              }, 300);
+                            }
+                          }}
+                          className="block px-4 py-3 text-sm text-brand-text-secondary hover:text-white active:text-white hover:bg-brand-gold/10 transition-all rounded-lg border-l-2 border-transparent hover:border-brand-gold min-h-[44px] flex items-center touch-manipulation"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Mobile Auth Buttons */}
+              <div className="mt-8 pt-6 border-t border-white/10 space-y-3">
+                {user ? (
+                  <button
+                    onClick={() => {
+                      router.push(user.role === 'admin' ? '/admin' : '/dashboard');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full px-6 py-3.5 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-sm rounded-lg hover:shadow-gold transition-all min-h-[44px] flex items-center justify-center touch-manipulation"
+                  >
+                    Go to Dashboard
+                  </button>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full px-6 py-3.5 text-center text-base font-bold text-white hover:text-brand-gold active:text-brand-gold transition-colors border border-white/20 rounded-lg min-h-[44px] flex items-center justify-center touch-manipulation"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block w-full px-6 py-3.5 text-center bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-sm rounded-lg hover:shadow-gold transition-all min-h-[44px] flex items-center justify-center touch-manipulation"
+                    >
+                      Open Account
+                    </Link>
+                  </>
                 )}
               </div>
-            ))}
-
-            {/* Mobile Auth Buttons */}
-            <div className="mt-8 pt-6 border-t border-white/10 space-y-3">
-              {user ? (
-                <button
-                  onClick={() => {
-                    router.push(user.role === 'admin' ? '/admin' : '/dashboard');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full px-6 py-3.5 bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-sm rounded-lg hover:shadow-gold transition-all min-h-[44px] flex items-center justify-center touch-manipulation"
-                >
-                  Go to Dashboard
-                </button>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full px-6 py-3.5 text-center text-base font-bold text-white hover:text-brand-gold active:text-brand-gold transition-colors border border-white/20 rounded-lg min-h-[44px] flex items-center justify-center touch-manipulation"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full px-6 py-3.5 text-center bg-brand-gold text-brand-obsidian font-black uppercase tracking-widest text-sm rounded-lg hover:shadow-gold transition-all min-h-[44px] flex items-center justify-center touch-manipulation"
-                  >
-                    Open Account
-                  </Link>
-                </>
-              )}
             </div>
           </div>
-        </div>
         </>,
         document.body
       )}
